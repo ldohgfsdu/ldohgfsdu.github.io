@@ -35,7 +35,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.6 · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.7 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -171,6 +171,21 @@ function clean(html){
   root.querySelectorAll('*').forEach(x=>{
     for(let a of [...x.attributes]){
       const k=a.name.toLowerCase(),v=a.value;
+      if(k==='style'&&x.closest('svg')){
+        // Preserve harmless SVG paint instructions. Dropping fill/stroke from
+        // imported occlusion shapes makes them render as default BLACK shapes.
+        // Reject URLs, expressions, positioning and any unknown property.
+        const styles=v.split(';').map(x=>x.trim()).filter(Boolean).map(part=>{
+          const at=part.indexOf(':');if(at<1)return null;
+          const prop=part.slice(0,at).trim().toLowerCase(),val=part.slice(at+1).trim();
+          if(!/^(fill|stroke|stroke-width|fill-opacity|stroke-opacity|opacity|stroke-linecap|stroke-linejoin|stroke-dasharray)$/i.test(prop))return null;
+          if(!/^(?:none|transparent|currentcolor|#[a-f0-9]{3,8}|(?:rgba?|hsla?)\([\d\s,.%]+\)|[a-z]{1,20}|[\d.\s,%+-]+)$/i.test(val))return null;
+          if(/url|expression|@import|[<>;]/i.test(val))return null;
+          return prop+':'+val;
+        }).filter(Boolean);
+        if(styles.length)x.setAttribute('style',styles.join(';'));else x.removeAttribute('style');
+        continue;
+      }
       if(k.startsWith('on')||k==='srcset'||k==='style'||k==='srcdoc'||k==='href'||k==='xlink:href'||k==='poster'){x.removeAttribute(a.name);continue;}
       if(k==='src'&&x.tagName!=='IMG'){x.removeAttribute(a.name);continue;}
       if(k==='src'&&(v.startsWith('data:')||v.startsWith('blob:')||v.startsWith('http')||v.startsWith('//'))){x.removeAttribute(a.name);}
@@ -194,7 +209,7 @@ async function renderHTML(el,text){
     const wrappers=[...el.querySelectorAll('#io-wrapper,.anki-occlusion')];
     for(const wrapper of wrappers){
       const cover=wrapper.querySelector('#io-overlay,.anki-mask');
-      const base=wrapper.querySelector('#io-original,.anki-occlusion>img');
+      const base=wrapper.matches('.anki-occlusion')?wrapper.querySelector(':scope > img'):wrapper.querySelector('#io-original');
       if(!base)continue;
       const vector=cover?.querySelector('svg');
       const masks=[...(cover?.querySelectorAll('img')||[])];
