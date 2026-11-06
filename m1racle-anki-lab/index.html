@@ -40,13 +40,13 @@ const log=(s)=>{$('log').textContent+=(new Date().toLocaleTimeString()+' '+Strin
 const notice=s=>{$('status').textContent=s;log(s)};
 const safeString=s=>String(s==null?'':s);
 function escapeHTML(s){return safeString(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function loadLibrary(src){
+ return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(new Error('本地依赖加载失败：'+src+'。请尝试使用 Chrome 浏览器重新打开页面。'));document.head.appendChild(script);});
+}
 async function libraries(){
-  if(!JSZip){let m=await import('https://esm.sh/jszip@3.10.1');JSZip=m.default;}
-  if(!fzstd){fzstd=(await import('https://esm.sh/fzstd@0.1.1')).decompress;}
-  if(!SQL){
-    if(!window.initSqlJs)await new Promise((res,rej)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/sql-wasm.js';s.onload=res;s.onerror=()=>rej(new Error('SQL.js 下载失败，请检查网络'));document.head.appendChild(s)});
-    SQL=await window.initSqlJs({locateFile:n=>'https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/'+n});
-  }
+ if(!JSZip){await loadLibrary('./vendor/jszip.min.js');JSZip=window.JSZip;if(!JSZip)throw new Error('JSZip 加载后没有初始化');}
+ if(!fzstd){await loadLibrary('./vendor/fzstd.js');fzstd=window.fzstd?.decompress;if(!fzstd)throw new Error('Zstandard 解压库加载失败');}
+ if(!SQL){if(!window.initSqlJs)await loadLibrary('./vendor/sql-wasm.js');SQL=await window.initSqlJs({locateFile:n=>'./vendor/'+n});}
 }
 function query(db,sql){
   const r=db.exec(sql)[0];if(!r)return [];
@@ -183,7 +183,7 @@ async function showCurrent(){
 async function grade(value){
   if(!active||!visible)return;
   try{
-    if(!fsrsModule){fsrsModule=await import('https://esm.sh/ts-fsrs@5.4.2');scheduler=fsrsModule.fsrs();}
+    if(!fsrsModule){await loadLibrary('./vendor/fsrs.js');fsrsModule=window.M1racleFSRS;if(!fsrsModule)throw new Error('FSRS 复习模块未加载');scheduler=fsrsModule.fsrs();}
     let r=loadReview(active.cid),c=r?.card||fsrsModule.createEmptyCard();
     if(c.due)c.due=new Date(c.due);if(c.last_review)c.last_review=new Date(c.last_review);
     const result=scheduler.next(c,new Date(),value);
