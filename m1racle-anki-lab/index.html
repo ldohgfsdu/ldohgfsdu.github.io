@@ -35,7 +35,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.7 · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.8 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -304,22 +304,50 @@ function looksLikeInternalId(text){
   const s=String(text||'').replace(/<[^>]+>/g,'').trim();
   return /^([A-Z]:)?\d{12,}[^\s<>]*$/.test(s);
 }
+function ioField(item,label,position){
+  const m=models[String(item.mid)]||{},fields=item.fields||[];
+  const ix=(m.flds||[]).findIndex(f=>String(f?.name||'').toLowerCase()===label.toLowerCase());
+  // Fallback positions are documented by Image Occlusion Enhanced.
+  return String(fields[ix>=0?ix:position]||'');
+}
+function ioImageOnly(field){
+  // Only render a known image from the media index; ignore mask SVG HTML.
+  const doc=new DOMParser().parseFromString('<div>'+String(field||'')+'</div>','text/html');
+  const img=doc.querySelector('img[src]');
+  let src=img?.getAttribute('src')||String(field||'').trim();
+  if(!src||/[<>\n\r{}]/.test(src))return '';
+  let name=src.replace(/^.*\//,'');
+  try{name=decodeURIComponent(name)}catch{}
+  if(!mediaNames.has(name))return '';
+  return '<img src="'+escapeHTML(name)+'" alt="图片遮挡媒体">';
+}
 function sides(item){
-  const m=models[String(item.mid)]||{},f=item.fields||{},name=String(m.name||'').toLowerCase();
-  const questionMask=byField(m,f,['Question Mask','QuestionMask','Question Image','QMask']);
-  const answerMask=byField(m,f,['Answer Mask','AnswerMask','Answer Image','AMask']);
-  const base=byField(m,f,['Image','Original Image','图片','图像']);
-  const header=byField(m,f,['Header','Heading']);
-  const extra=byField(m,f,['Back Extra','Extra']);
+  const m=models[String(item.mid)]||{},f=item.fields||[],name=String(m.name||'').toLowerCase();
   const tpl=m.tmpls?.[item.ord]||m.tmpls?.[0];
-  const ioTemplate=/<div[^>]+id=["']io-wrapper["']|io-overlay|question mask/i.test(tpl?.qfmt||'');
-  if((questionMask||ioTemplate)&&base){
-    const block=(mask)=>'<div class="anki-occlusion">'+imageValue(base)+'<div class="anki-mask">'+imageValue(mask||'')+'</div></div>';
-    return {front:(header||'')+block(questionMask||''),back:(header||'')+block(answerMask||'')+(extra||''),mode:'Anki 图片遮挡（验证加载）'};
+  const ioEnhanced=/image occlusion enhanced|图像遮挡增强/i.test(name)
+    ||/id=["']io-(wrapper|overlay|original)["']/i.test(tpl?.qfmt||'')
+    ||(m.flds||[]).some(x=>/question mask/i.test(x?.name||''));
+  if(ioEnhanced){
+    const original=ioImageOnly(ioField(item,'Image',2));
+    const question=ioImageOnly(ioField(item,'Question Mask',3));
+    const answer=ioImageOnly(ioField(item,'Answer Mask',9));
+    const header=ioField(item,'Header',1);
+    const footer=ioField(item,'Footer',4);
+    const msg='<div class="anki-mask-error">无法识别本卡的遮挡媒体，已隐藏原图以防泄露答案。请查看本卡结构诊断。</div>';
+    const make=(mask)=>'<div class="anki-occlusion">'+original+'<div class="anki-mask">'+mask+'</div></div>';
+    return {
+      front:original&&question?(header||'')+make(question)+(footer||''):msg,
+      back:original?make(answer)+(footer||''):msg,
+      mode:original&&question?'Image Occlusion Enhanced（受控遮挡）':'Image Occlusion Enhanced（缺少有效遮挡）'
+    };
+  }
+  if(/image.occlusion/i.test(name)||f.some(x=>/image-occlusion:(rect|ellipse|polygon)/.test(x))){
+    const err='<div class="anki-mask-error">检测到 Anki 原生 Image Occlusion；当前网页尚未实现官方遮挡渲染器，已隐藏图片。</div>';
+    return {front:err,back:err,mode:'原生 Image Occlusion（待兼容）'};
   }
   const cf=byField(m,f,['Text','Cloze'])||f[0];
   if((name.includes('cloze')||name.includes('填空'))&&/{{c\d+::/.test(cf)){
-    return {front:cloze(cf,item.ord,false),back:cloze(cf,item.ord,true)+(extra||''),mode:'文字填空'};
+    return {front:cloze(cf,item.ord,false),back:cloze(cf,item.ord,true)+(byField(m,f,['Back Extra','Extra'])||''),mode:'文字填空'};
   }
   if(tpl?.qfmt&&tpl?.afmt){
     const front=renderAnkiTemplate(tpl.qfmt,item,'');
