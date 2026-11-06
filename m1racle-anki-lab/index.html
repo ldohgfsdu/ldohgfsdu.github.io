@@ -23,9 +23,9 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
-<input id="file" type="file" accept=".apkg,.colpkg,.zip"/>
+<input id="file" type="file" aria-label="选择 Anki APKG 卡包（允许安卓文件管理器识别未知扩展名）"/>
 <div class="row" style="margin-top:12px"><button id="restore">恢复上次导入的卡包</button><button id="reset" title="只清理当前浏览器的本地复习进度">清空本地复习记录</button></div>
-<p id="status" class="note">选择 .apkg 文件后自动解析；首次使用需要联网下载 JavaScript 解压组件。</p>
+<p id="status" class="note">优先选择左边约 10.57 MB 的绪论卡包。安卓文件选择器中的灰色文档图标不代表文件不可用；点文件卡片后应返回本页并开始读取。若无响应，可用 Chrome 浏览器打开此网页。360 MB 卡包暂不在本版支持范围内。</p>
 <details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
 </section>
 <section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
@@ -196,7 +196,7 @@ function openDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB)ret
 async function storeFile(file){const db=await openDB();await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(file,'last');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}
 async function restoreFile(){let db=await openDB();let f=await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readonly');let req=tx.objectStore('packages').get('last');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});db.close();if(!f)throw new Error('浏览器没有保存过卡包');return f;}
 async function importFile(file,save){
- if(!file)throw new Error('未选择文件');if(file.size>120*1024*1024)throw new Error('单文件上限120MB');
+ if(!file)throw new Error('尚未选择文件，请点击文件卡片（不是长按）。');if(!/\.(apkg|colpkg|zip)$/i.test(file.name))throw new Error('这不是 .apkg / .colpkg / .zip 格式的卡包：'+file.name);if(file.size>120*1024*1024)throw new Error('卡包 '+(file.size/1024/1024).toFixed(1)+' MB，超过当前网页实验版的120 MB上限。请先选择约10.57 MB的绪论卡包；360 MB卡包需要分批/流式解析，不能直接在手机内存中读取。');
  notice('加载解压与 SQLite 组件……');await libraries();
  for(const u of mediaUrls.values())URL.revokeObjectURL(u);
  mediaUrls.clear();mediaNames.clear();mediaNumber.clear();decks={};models={};rows=[];index=0;
@@ -228,7 +228,7 @@ async function importFile(file,save){
  notice('成功载入 '+rows.length+' 张卡。点击显示答案开始复习。');
  await showCurrent();
 }
-$('file').addEventListener('change',async e=>{try{await importFile(e.target.files[0],true)}catch(err){notice('导入失败：'+(err.message||err));}});
+$('file').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f){notice('文件选择器已关闭，但未选中文件。请单击对应文件卡片。');return;} notice('已选中 '+f.name+'（'+(f.size/1024/1024).toFixed(2)+' MB），准备读取。');try{await importFile(f,true)}catch(err){notice('导入失败：'+(err.message||err));}finally{e.target.value='';}});
 $('restore').addEventListener('click',async()=>{try{await importFile(await restoreFile(),false)}catch(e){notice('恢复失败：'+e.message)}});
 $('deck').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
 $('scope').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
