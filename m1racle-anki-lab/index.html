@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"/>
+<title>M1racle Study · Anki 卡包实验页</title>
+<style>
+:root{font-family:system-ui,-apple-system,"PingFang SC","Microsoft Yahei",sans-serif;color-scheme:light dark;--bg:#f5f7fb;--fg:#152238;--muted:#66758c;--card:#fff;--line:#e1e7ef;--main:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1522;--fg:#e9eff7;--muted:#96a8c0;--card:#1a2637;--line:#334459;--main:#8aafff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg)}main{max-width:1040px;margin:auto;padding:24px 16px 60px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}h1{font-size:24px;letter-spacing:-.5px;margin:0}h2{font-size:17px;margin:0 0 12px}.subtitle{font-size:13px;color:var(--muted);margin:7px 0 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:20px;margin:14px 0;box-shadow:0 3px 18px #0000000a}
+button,input,select{font:inherit}button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:11px;padding:11px 14px;cursor:pointer;font-size:14px;font-weight:600}button.primary{color:white;background:#2563eb;border-color:#2563eb}button:disabled{opacity:.45;cursor:not-allowed}
+input[type=file]{width:100%;padding:12px;border:1px dashed var(--line);border-radius:10px}select{width:100%;padding:10px;border-radius:9px;background:var(--card);color:var(--fg);border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.row>*{flex-shrink:0}.stat{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}.note{font-size:13px;color:var(--muted);line-height:1.65}
+.notice{padding:11px 13px;border-radius:10px;background:#2563eb12;border:1px solid #2563eb33;font-size:13px;line-height:1.65}
+#log{white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:12px/1.6 ui-monospace,monospace;color:var(--muted)}
+#front,#back{min-height:100px;line-height:1.65;font-size:17px;overflow-wrap:anywhere}#front img,#back img{display:block;max-width:100%;height:auto;object-fit:contain;margin:8px auto}#front svg,#back svg{max-width:100%;height:auto}
+#front img,#back img{cursor:zoom-in}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
+.cardshell{min-height:240px}.hidden{display:none!important}.ratings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ratings button{padding:13px 5px}.rating-again{color:#e85b61}.rating-easy{color:#248f65}.tag{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted)}
+summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--line);overflow:hidden}.progress>div{height:100%;background:#2563eb;transition:width .2s}
+@media(max-width:550px){main{padding:16px 12px 50px}.panel{padding:14px}.ratings{gap:5px}.ratings button{font-size:12px}h1{font-size:20px}}
+</style></head>
+<body><main>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">Web · 非 APK</span></header>
+<div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
+<section class="panel">
+<h2>① 导入 Anki 卡包</h2>
+<input id="file" type="file" accept=".apkg,.colpkg,.zip"/>
+<div class="row" style="margin-top:12px"><button id="restore">恢复上次导入的卡包</button><button id="reset" title="只清理当前浏览器的本地复习进度">清空本地复习记录</button></div>
+<p id="status" class="note">选择 .apkg 文件后自动解析；首次使用需要联网下载 JavaScript 解压组件。</p>
+<details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
+</section>
+<section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
+<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div></section>
+<section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、部分以 Question Mask / Answer Mask 保存的图片遮挡卡。<b>原生 Anki Image Occlusion 的复杂 SVG 遮挡及第三方自定义 JS 模板不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
+</main>
+<script>
+(function(){
+let SQL,JSZip,fzstd,fsrsModule,scheduler,zip,mediaNames=new Map(),mediaNumber=new Map(),mediaUrls=new Map(),rows=[],models={},decks={},packKey='',dbcache,active=null,session=[],index=0,visible=false;
+const $=x=>document.getElementById(x);
+const log=(s)=>{$('log').textContent+=(new Date().toLocaleTimeString()+' '+String(s)+'\n');};
+const notice=s=>{$('status').textContent=s;log(s)};
+const safeString=s=>String(s==null?'':s);
+function escapeHTML(s){return safeString(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+async function libraries(){
+  if(!JSZip){let m=await import('https://esm.sh/jszip@3.10.1');JSZip=m.default;}
+  if(!fzstd){fzstd=(await import('https://esm.sh/fzstd@0.1.1')).decompress;}
+  if(!SQL){
+    if(!window.initSqlJs)await new Promise((res,rej)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/sql-wasm.js';s.onload=res;s.onerror=()=>rej(new Error('SQL.js 下载失败，请检查网络'));document.head.appendChild(s)});
+    SQL=await window.initSqlJs({locateFile:n=>'https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/'+n});
+  }
+}
+function query(db,sql){
+  const r=db.exec(sql)[0];if(!r)return [];
+  return r.values.map(values=>Object.fromEntries(r.columns.map((key,i)=>[key,values[i]])));
+}
+function uncompress(bytes){
+  if(bytes[0]===40&&bytes[1]===181&&bytes[2]===47&&bytes[3]===253)return fzstd(bytes);
+  return bytes;
+}
+function readVarint(bytes,st){let value=0,shift=0,i=st;for(;i<bytes.length&&i<st+10;i++){const b=bytes[i];value+=(b&127)*Math.pow(2,shift);if(!(b&128))return [value,i+1];shift+=7;}throw new Error('Protobuf varint 格式错误')}
+function pbFields(bytes,st,end){
+  let i=st,a=[];
+  while(i<end){let [tag,p]=readVarint(bytes,i);i=p;let no=Math.floor(tag/8),type=tag%8,val;
+    if(type===0){[val,i]=readVarint(bytes,i);}
+    else if(type===2){let len;[len,i]=readVarint(bytes,i);if(len<0||i+len>end)throw new Error('Protobuf 数据越界');val=bytes.subarray(i,i+len);i+=len;}
+    else if(type===1){i+=8;continue}
+    else if(type===5){i+=4;continue}
+    else throw new Error('不支持的 Protobuf wire type '+type);
+    a.push([no,type,val]);
+  }
+  return a;
+}
+function decodeMedia(bytes){
+  bytes=uncompress(bytes);let head=new TextDecoder().decode(bytes.subarray(0,20));
+  if(head.trimStart().startsWith('{')){
+    let map=JSON.parse(new TextDecoder().decode(bytes));for(let [key,name] of Object.entries(map)){mediaNames.set(name,key);mediaNumber.set(key,name);}return 'JSON';
+  }
+  let entries=pbFields(bytes,0,bytes.length).filter(x=>x[0]===1&&x[1]===2),n=0;
+  for(let record of entries){
+    const fields=pbFields(record[2],0,record[2].length);
+    const f=fields.find(x=>x[0]===1&&x[1]===2);if(!f)continue;
+    const name=new TextDecoder().decode(f[2]);
+    const original=fields.find(x=>x[0]===255&&x[1]===0);
+    const num=original?String(original[2]):String(n);mediaNames.set(name,num);mediaNumber.set(num,name);n++;
+  }
+  return 'Protobuf';
+}
+function byField(model,fields,keys){
+  const names=(model?.flds||[]).map(x=>String(x.name||'').toLowerCase());
+  for(const key of keys){const index=names.findIndex(x=>x===key.toLowerCase());if(index>=0&&fields[index])return fields[index];}
+  return null;
+}
+function asModelMap(db){
+  let out={};
+  try{const c=query(db,'SELECT models,decks FROM col LIMIT 1')[0];if(c&&c.models)out=JSON.parse(c.models);if(c&&c.decks){let d=JSON.parse(c.decks);for(const [id,obj] of Object.entries(d))decks[id]=obj.name||id;}}catch(e){log('旧版模型表未找到：'+e.message)}
+  try{for(const row of query(db,'SELECT id,name FROM decks'))decks[String(row.id)]=row.name}catch{}
+  if(!Object.keys(out).length){
+    try{for(const r of query(db,'SELECT id,name FROM notetypes'))out[String(r.id)]={name:r.name,flds:[]}}catch{}
+    try{for(const r of query(db,'SELECT ntid,name,ord FROM fields ORDER BY ntid,ord')){let m=out[String(r.ntid)];if(m)m.flds.push({name:r.name})}}catch{}
+  }
+  return out;
+}
+async function mediaURL(name){
+  if(mediaUrls.has(name))return mediaUrls.get(name);
+  const fileNo=mediaNames.get(name);if(fileNo===undefined)return null;
+  const entry=zip.file(fileNo);if(!entry)return null;
+  let bytes=uncompress(await entry.async('uint8array'));
+  let ext=name.toLowerCase().split('.').pop();
+  let mime=({'png':'image/png','jpg':'image/jpeg','jpeg':'image/jpeg','gif':'image/gif','webp':'image/webp','svg':'image/svg+xml','mp3':'audio/mpeg','ogg':'audio/ogg'}[ext]||'application/octet-stream');
+  const url=URL.createObjectURL(new Blob([bytes],{type:mime}));mediaUrls.set(name,url);return url;
+}
+function clean(html){
+  let doc=new DOMParser().parseFromString('<div>'+safeString(html)+'</div>','text/html'),root=doc.body.firstElementChild;
+  const bad='script,iframe,object,embed,form,button,input,link,meta,style,foreignObject,video,source';
+  root.querySelectorAll(bad).forEach(x=>x.remove());
+  root.querySelectorAll('*').forEach(x=>{
+    for(let a of [...x.attributes]){
+      const k=a.name.toLowerCase(),v=a.value;
+      if(k.startsWith('on')||k==='srcset'||k==='style'||k==='srcdoc'||k==='href'||k==='xlink:href'||k==='poster'){x.removeAttribute(a.name);continue;}
+      if(k==='src'&&x.tagName!=='IMG'){x.removeAttribute(a.name);continue;}
+      if(k==='src'&&(v.startsWith('data:')||v.startsWith('blob:')||v.startsWith('http')||v.startsWith('//'))){x.removeAttribute(a.name);}
+    }
+  });
+  return root;
+}
+async function renderHTML(el,text){
+  const root=clean(text);
+  const imgs=[...root.querySelectorAll('img')];
+  await Promise.all(imgs.map(async img=>{
+    let src=img.getAttribute('src');if(!src)return;
+    let name=src.replace(/^.*\//,'');
+    try{name=decodeURIComponent(name)}catch{}
+    let url=await mediaURL(name);if(url){img.setAttribute('src',url);img.alt=name;img.addEventListener('click',()=>{if(img.style.maxWidth==='none'){img.style.maxWidth='100%';img.style.width='';}else{img.style.maxWidth='none';img.style.width='auto';}})}else{img.replaceWith(document.createTextNode('[未找到图片：'+name+']'))}
+  }));
+  el.replaceChildren(...root.childNodes);
+}
+function cloze(s,ord,show){
+  return safeString(s).replace(/{{c(\d+)::([\s\S]*?)(?:::(.*?))?}}/g,(all,num,answer,hint)=>{
+    if(Number(num)!==ord+1)return answer;
+    return show?'<b style="color:#2563eb">'+escapeHTML(answer)+'</b>':'<b style="color:#2563eb">['+escapeHTML(hint||'……')+']</b>';
+  });
+}
+function sides(item){
+  const f=item.fields, m=models[String(item.mid)]||{},name=(m.name||'').toLowerCase();
+  const questionMask=byField(m,f,['Question Mask','QuestionMask','Question Image','QMask']);
+  const answerMask=byField(m,f,['Answer Mask','AnswerMask','Answer Image','AMask']);
+  const head=byField(m,f,['Header','Heading']),ex=byField(m,f,['Back Extra','Extra']);
+  if(questionMask&&answerMask){return {front:(head||'')+questionMask,back:(head||'')+answerMask+(ex||''),mode:'图片遮挡模板（预览）'};}
+  let clozeField=byField(m,f,['Text','Cloze'])||f[0];
+  if((name.includes('cloze')||name.includes('填空'))&&/{{c\d+::/.test(clozeField)){
+    return {front:cloze(clozeField,item.ord,false),back:cloze(clozeField,item.ord,true)+(ex||''),mode:'文字填空'};
+  }
+  if(/image.occlusion/i.test(name)&&f.some(x=>/image-occlusion:|{{c\d+::/.test(x))){
+    return {front:'<p>检测到 Anki 原生图片遮挡字段。当前预览器尚未完整重建其遮挡图层。</p>'+(byField(m,f,['Image'])||f[0]),back:'<p>原生遮挡需要进一步适配；请不要将本卡视为验证通过。</p>',mode:'原生图片遮挡（待适配）'};
+  }
+  return {front:f[0]||'（空正面）',back:(f[1]||'（无背面字段）')+(ex&&ex!==f[1]?'<hr/>'+ex:''),mode:'基础卡'};
+}
+function revKey(cid){return 'm1racle_anki_review_'+packKey+'_'+cid;}
+function loadReview(cid){try{return JSON.parse(localStorage.getItem(revKey(cid))||'null')}catch{return null}}
+function due(item){let r=loadReview(item.cid);return !r||!r.due||new Date(r.due).getTime()<=Date.now()}
+function scopeRows(){
+  const did=$('deck').value;
+  const subset=rows.filter(r=>(did==='all'||String(r.did)===did)&&($('scope').value==='all'||due(r)));
+  return subset;
+}
+function updateStats(){
+  if(!rows.length)return;
+  let did=$('deck').value,filtered=rows.filter(r=>did==='all'||String(r.did)===did);
+  const reviewed=filtered.filter(r=>!!loadReview(r.cid)).length;
+  $('counts').textContent='本牌组 '+filtered.length+' 张卡片 · 已有本地复习记录 '+reviewed+' 张 · 当前可复习 '+scopeRows().length+' 张';
+  $('bar').style.width=(filtered.length?Math.round(reviewed/filtered.length*100):0)+'%';
+}
+async function showCurrent(){
+  updateStats();session=scopeRows();if(index>=session.length)index=0;
+  const item=session[index];
+  $('review').classList.toggle('hidden',!item);
+  if(!item){if(rows.length)notice('本次筛选范围没有待复习卡片，可切换为“全部卡片”。');return;}
+  active=item;visible=false;
+  $('reveal-area').classList.remove('hidden');$('grade').classList.add('hidden');$('back').classList.add('hidden');
+  const s=sides(item);
+  $('head').innerHTML='<span class="tag">'+escapeHTML(decks[String(item.did)]||'牌组')+'</span><span class="stat">'+(index+1)+' / '+session.length+' · '+escapeHTML(s.mode)+'</span>';
+  await renderHTML($('front'),s.front);await renderHTML($('back'),s.back);
+}
+async function grade(value){
+  if(!active||!visible)return;
+  try{
+    if(!fsrsModule){fsrsModule=await import('https://esm.sh/ts-fsrs@5.4.2');scheduler=fsrsModule.fsrs();}
+    let r=loadReview(active.cid),c=r?.card||fsrsModule.createEmptyCard();
+    if(c.due)c.due=new Date(c.due);if(c.last_review)c.last_review=new Date(c.last_review);
+    const result=scheduler.next(c,new Date(),value);
+    localStorage.setItem(revKey(active.cid),JSON.stringify({card:result.card,due:result.card.due,reviewedAt:new Date().toISOString(),grade:value}));
+    notice('复习已保存在本机。下次到期：'+new Date(result.card.due).toLocaleString('zh-CN'));
+    session=scopeRows();if(index>=session.length)index=0;await showCurrent();
+  }catch(e){notice('FSRS复习记录未保存：'+(e.message||e));}
+}
+function openDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error('浏览器不支持 IndexedDB'));const req=indexedDB.open('m1racle-anki-local',1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('packages'))req.result.createObjectStore('packages')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function storeFile(file){const db=await openDB();await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(file,'last');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}
+async function restoreFile(){let db=await openDB();let f=await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readonly');let req=tx.objectStore('packages').get('last');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});db.close();if(!f)throw new Error('浏览器没有保存过卡包');return f;}
+async function importFile(file,save){
+ if(!file)throw new Error('未选择文件');if(file.size>120*1024*1024)throw new Error('单文件上限120MB');
+ notice('加载解压与 SQLite 组件……');await libraries();
+ for(const u of mediaUrls.values())URL.revokeObjectURL(u);
+ mediaUrls.clear();mediaNames.clear();mediaNumber.clear();decks={};models={};rows=[];index=0;
+ notice('读取 ZIP 归档 '+file.name);
+ zip=await JSZip.loadAsync(await file.arrayBuffer());
+ const dbName=['collection.anki21b','collection.anki21','collection.anki2'].find(n=>zip.file(n));
+ if(!dbName)throw new Error('没有找到 collection.anki21b / .anki21 / .anki2');
+ notice('数据库格式：'+dbName);
+ let b=uncompress(await zip.file(dbName).async('uint8array'));
+ const db=new SQL.Database(b);
+ const table=query(db,"SELECT name FROM sqlite_master WHERE type='table'").map(x=>x.name);
+ if(!table.includes('notes')||!table.includes('cards'))throw new Error('数据库不含 notes 或 cards 表');
+ const counts=query(db,'SELECT (SELECT count(*) FROM notes) AS notes,(SELECT count(*) FROM cards) AS cards')[0];
+ models=asModelMap(db);
+ let cards=query(db,'SELECT c.id as cid,c.nid as nid,c.did as did,c.ord as ord,n.mid as mid,n.flds as flds FROM cards c JOIN notes n ON n.id=c.nid ORDER BY c.id LIMIT 60000');
+ rows=cards.map(x=>({...x,fields:safeString(x.flds).split('\x1f')}));
+ db.close();
+ let mediaType='无';
+ if(zip.file('media')){try{mediaType=decodeMedia(await zip.file('media').async('uint8array'))}catch(e){log('媒体索引失败：'+e.message);mediaType='未能识别';}}
+ packKey=file.name+'_'+file.size;
+ $('stats').classList.remove('hidden');const options=[['all','所有牌组']];
+ for(const did of [...new Set(rows.map(x=>String(x.did)))])options.push([did,decks[did]||('牌组 '+did)]);
+ $('deck').innerHTML='';
+ for(const [val,label] of options){let o=document.createElement('option');o.value=val;o.textContent=label;$('deck').append(o)}
+ $('meta').textContent='文件 '+file.name+' · 笔记 '+counts.notes+' · 卡片 '+counts.cards+' · 已读取 '+rows.length+' · 媒体 '+mediaNames.size+'（'+mediaType+'） · 笔记类型 '+Object.keys(models).length;
+ if(Number(counts.cards)>rows.length)log('安全上限：本次仅加载前60000张卡');
+ if(!mediaNames.size)log('提示：媒体索引为空或未识别，带图片的卡片可能无法完整显示');
+ if(save){try{await storeFile(file);log('卡包已经保存到此浏览器 IndexedDB')}catch(e){log('浏览器本地备份失败：'+e.message)}}
+ notice('成功载入 '+rows.length+' 张卡。点击显示答案开始复习。');
+ await showCurrent();
+}
+$('file').addEventListener('change',async e=>{try{await importFile(e.target.files[0],true)}catch(err){notice('导入失败：'+(err.message||err));}});
+$('restore').addEventListener('click',async()=>{try{await importFile(await restoreFile(),false)}catch(e){notice('恢复失败：'+e.message)}});
+$('deck').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
+$('scope').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
+$('reveal').addEventListener('click',()=>{visible=true;$('back').classList.remove('hidden');$('reveal-area').classList.add('hidden');$('grade').classList.remove('hidden')});
+$('grade').addEventListener('click',e=>{let b=e.target.closest('[data-grade]');if(b)grade(Number(b.dataset.grade))});
+$('reset').addEventListener('click',()=>{if(!packKey)return notice('请先导入卡包');if(!confirm('确定清除当前卡包的本地复习评分记录吗？'))return;for(let x of rows)localStorage.removeItem(revKey(x.cid));index=0;notice('已清除当前卡包的本地复习记录');showCurrent()});
+window.addEventListener('error',e=>log('浏览器错误：'+e.message));
+})();
+</script></body></html>
