@@ -1,0 +1,104 @@
+name: Anki image occlusion browser regression
+
+on:
+  push:
+    paths:
+      - .github/workflows/test-anki-occlusion.yml
+      - m1racle-anki-lab/index.html
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Create synthetic Anki image-occlusion fixtures (no private user data)
+        shell: bash
+        run: |
+          mkdir -p /tmp/m1racle-anki-fixtures
+          python3 - <<'PY'
+          import json,sqlite3, tempfile,zipfile,os
+          from pathlib import Path
+          folder=Path('/tmp/m1racle-anki-fixtures')
+          cols=['ID (hidden)','Header','Image','Question Mask','Footer','Remarks','Sources','Extra 1','Extra 2','Answer Mask','Original Mask']
+          base='<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><rect width="320" height="180" fill="white"/><text x="80" y="92" font-size="23" fill="black">SECRET ANSWER</text></svg>'
+          mask='<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><rect x="75" y="64" width="180" height="35" fill="#ef4444"/></svg>'
+          reveal='<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"></svg>'
+          for no_mask in (False,True):
+            fname=folder/('no-mask.apkg' if no_mask else 'correct-mask.apkg')
+            dbpath=folder/'sample.sqlite'
+            if dbpath.exists():dbpath.unlink()
+            conn=sqlite3.connect(dbpath)
+            conn.execute('CREATE TABLE col (models TEXT,decks TEXT)')
+            conn.execute('CREATE TABLE notes (id INTEGER,mid INTEGER,flds TEXT)')
+            conn.execute('CREATE TABLE cards (id INTEGER,nid INTEGER,did INTEGER,ord INTEGER)')
+            model={'100':{'name':'Image Occlusion Enhanced','flds':[{'name':v} for v in cols],
+               'tmpls':[{'name':'IO Card','qfmt':'{{#Image}}<div id="io-wrapper"><div id="io-overlay">{{Question Mask}}</div><div id="io-original">{{Image}}</div></div>{{/Image}}',
+                          'afmt':'<div id="io-wrapper"><div id="io-overlay">{{Answer Mask}}</div><div id="io-original">{{Image}}</div></div>'}]}}
+            conn.execute('INSERT INTO col VALUES (?,?)',(json.dumps(model),json.dumps({'1':{'name':'测试牌组'}})))
+            fields=['D:20260101010101','', '<img src="base.svg">', '' if no_mask else '<img src="question.svg">', '', '', '', '', '', '<img src="answer.svg">','']
+            conn.execute('INSERT INTO notes VALUES (?,?,?)',(1,100,'\x1f'.join(fields)))
+            conn.execute('INSERT INTO cards VALUES (?,?,?,?)',(1,1,1,0))
+            conn.commit();conn.close()
+            with zipfile.ZipFile(fname,'w',compression=zipfile.ZIP_DEFLATED) as z:
+              z.write(dbpath,'collection.anki2')
+              z.writestr('media',json.dumps({'0':'base.svg','1':'question.svg','2':'answer.svg'}))
+              z.writestr('0',base);z.writestr('1',mask);z.writestr('2',reveal)
+          print('Generated sample packages:',[(p.name,p.stat().st_size) for p in folder.glob('*.apkg')])
+          PY
+      - name: Start local static site
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/m1racle-site.log 2>&1 &
+      - name: Test masked front, reveal, and missing-mask privacy
+        shell: bash
+        run: |
+          cat > /tmp/test-m1racle-anki.cjs <<'EOF'
+          const { chromium }=require(process.cwd()+'/node_modules/playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e)));
+            await page.goto('http://127.0.0.1:8765/m1racle-anki-lab/');
+            await page.locator('#file').setInputFiles('/tmp/m1racle-anki-fixtures/correct-mask.apkg');
+            await page.locator('#front .anki-occlusion .anki-mask img').waitFor({timeout:30000});
+            await page.waitForFunction(()=>[...document.querySelectorAll('#front .anki-mask img')].every(i=>i.complete&&i.naturalWidth>0));
+            const m=await page.evaluate(()=>{
+              const w=document.querySelector('#front .anki-occlusion'),cover=w.querySelector('.anki-mask'),base=w.querySelector(':scope>img'),mask=cover.querySelector('img');
+              const x=base.getBoundingClientRect(),y=mask.getBoundingClientRect();
+              return {absolute:getComputedStyle(cover).position==='absolute',baseWidth:x.width,maskWidth:y.width,
+                leftDiff:Math.abs(x.left-y.left),topDiff:Math.abs(x.top-y.top),heightDiff:Math.abs(x.height-y.height),maskNaturalWidth:mask.naturalWidth};
+            });
+            if(!m.absolute||m.baseWidth<100||Math.abs(m.baseWidth-m.maskWidth)>2||m.leftDiff>2||m.topDiff>2||m.heightDiff>3)
+              throw new Error('Question mask is not aligned on top of source image '+JSON.stringify(m));
+            await page.screenshot({path:'/tmp/anki-masked-front.png',fullPage:true});
+            if(!await page.locator('#back').isHidden())throw Error('Answer is visible before reveal');
+            await page.locator('#reveal').click();
+            if(!await page.locator('#back').isVisible())throw Error('Answer did not reveal');
+            await page.screenshot({path:'/tmp/anki-revealed-answer.png',fullPage:true});
+            await page.locator('#file').setInputFiles('/tmp/m1racle-anki-fixtures/no-mask.apkg');
+            await page.locator('#front .anki-mask-error').waitFor({timeout:30000});
+            if(await page.locator('#front .anki-occlusion>img').count())throw Error('Unmasked original image leaked in front view');
+            await page.screenshot({path:'/tmp/anki-missing-mask.png',fullPage:true});
+            if(errors.length)throw Error('Browser JS errors '+errors.join('; '));
+            console.log('PASS: 390px Android-sized viewport; overlay aligned; answer hidden until reveal; missing masks fail closed',m);
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          EOF
+          node /tmp/test-m1racle-anki.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: anki-occlusion-smoke-screenshots
+          path: /tmp/anki-*.png
+          if-no-files-found: ignore
