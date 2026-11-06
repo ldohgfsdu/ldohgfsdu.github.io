@@ -282,6 +282,7 @@ small,sub,sup{font-size:12px!important}
 <script defer src="../assets/cloud-config.js"></script><script defer src="../assets/cloud-sync.js"></script>
 </head>
 <body>
+<aside id="update-banner" class="update-banner" role="status" aria-live="polite"><div><strong>有新版本可用</strong><p>更新会刷新页面，请先保存当前练习。</p></div><button id="apply-update" class="btn" type="button">立即更新</button></aside>
 <div class="shell"><aside class="sidebar"><div class="brand"><div class="brand-logo"><div class="brand-mark-wrap"><img src="brand-mark.png" alt="m1racle 品牌母标" class="brand-mark-img"/></div><div class="brand-type"><div class="brand-name">Study</div><div class="brand-sub">体格检查  66项考点</div></div></div></div><a class="platform-back-link" href="../" aria-label="返回 M1racle Study 平台首页">返回学习平台</a><a class="platform-back-link" href="../account/">账号与同步</a><div class="side-caption">体格检查</div><nav id="side-nav"></nav><div class="side-footer"><div class="toolbar"><span class="small strong">整体掌握度</span><strong id="side-progress">0%</strong></div><div class="bar" style="margin:10px 0"><i id="side-progress-bar" style="width:0%"></i></div><div class="micro">登录后支持跨设备云同步；本机可导出备份。</div><button class="btn sm soft" style="margin-top:12px;width:100%" data-go="notes">导出学习记录</button></div></aside><div class="workspace"><header class="topbar"><div><a href="../" class="physical-top-back">返回首页</a><a href="../account/" class="physical-top-back">账号</a><div class="top-brand"><div class="brand-mark-wrap"><img src="brand-mark.png" alt="m1racle 品牌母标" class="brand-mark-img"/></div><div class="brand-type"><div class="brand-name">Study</div></div></div></div><div class="topbar-right"><label class="searchbox"><span aria-hidden="true">⌕</span><input id="global-search" type="search" placeholder="搜索66项考点…" autocomplete="off" aria-label="搜索考点"/></label><select class="theme-select" id="theme-select" aria-label="阅读主题"><option value="sea">海盐</option><option value="ink">墨色</option><option value="bamboo">竹月</option></select></div></header><main id="main" tabindex="-1"></main><footer class="footer">基于用户提供的《2025昭昭实践技能操作核心考点背诵版》书内第84—92页（PDF第91—99页）制作，教材内容为归纳转述，点击页码查看书内及PDF页码，支持离线练习与可选云同步，双资料口述与2020评分对照，v8.0</footer></div></div>
 <div id="mobile-nav" class="mobile-nav" aria-label="移动导航"></div>
 <div id="more-menu" class="more-menu" hidden></div>
@@ -479,11 +480,11 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
       const banner=document.getElementById('update-banner');
       const apply=document.getElementById('apply-update');
       let applyingUpdate=false;
-      const showUpdate=worker=>{if(!worker)return;banner.classList.add('show');apply.onclick=()=>{applyingUpdate=true;worker.postMessage({type:'SKIP_WAITING'})}};
+      const showUpdate=worker=>{if(!worker||!banner||!apply)return;banner.classList.add('show');apply.onclick=()=>{applyingUpdate=true;worker.postMessage({type:'SKIP_WAITING'})}};
       if(reg.waiting)showUpdate(reg.waiting);
       reg.addEventListener('updatefound',()=>{
         const nw=reg.installing;if(!nw)return;
-        nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)showUpdate(nw)})
+        nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&reg.waiting)showUpdate(reg.waiting)})
       });
       // Initial scope takeover must preserve the current exercise and text input.
       navigator.serviceWorker.addEventListener('controllerchange',()=>{if(applyingUpdate)window.location.reload()});
