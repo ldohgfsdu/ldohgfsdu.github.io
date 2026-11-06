@@ -591,7 +591,7 @@ let grading=false;
 async function grade(value){
  if(!active||!visible||grading||rendering||importing||isSuspended(active)||Core.isBuried(active,study,new Date()))return;
  grading=true;updateActions();
- const gradedItem=active,gradedPack=packKey;
+ const gradedItem=active,gradedPack=packKey,nextBrowseId=session.length?String(session[(index+1)%session.length].cid):null;
  let committed=false;
  try{
   if(!scheduler)throw new Error('FSRS 复习模块未加载，请重新导入卡包');
@@ -603,7 +603,7 @@ async function grade(value){
   notice('已记录评分；下次到期：'+new Date(result.card.due).toLocaleString('zh-CN')+'（可撤销）');
   session=scopeRows();
   // Browse mode keeps every card in the list, so advance past the graded card.
-  if($('scope').value==='all'&&session.length)index=(index+1)%session.length;
+  if($('scope').value==='all'&&session.length)index=Math.max(0,session.findIndex(row=>String(row.cid)===nextBrowseId));
   else if(index>=session.length)index=0;
   await showCurrent();
  }catch(e){rendering=false;notice((committed?'评分已保存，卡片刷新失败：':'FSRS复习记录未保存：')+(e.message||e));}
@@ -770,7 +770,7 @@ window.addEventListener('storage',e=>{
  catch(error){notice('其他页面的复习数据无法读取：'+error.message);}
 });
 document.addEventListener('keydown',e=>{
- if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest?.('input,textarea,select,button,[contenteditable="true"]'))return;
+ if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest?.('input,textarea,select,button,[contenteditable="true"]'))return;
  if(e.key===' '&&active){e.preventDefault();if(visible)grade(3);else $('reveal').click();}
  else if(visible&&/^[1-4]$/.test(e.key)){e.preventDefault();grade(Number(e.key));}
 });

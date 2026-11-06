@@ -39,7 +39,7 @@ async function grade(page,value){
    const img=page.locator('#front .m1-ic-wrap > img');
    await img.evaluate(el=>{el.dataset.identity='same-image-node';});
    if(width===390)await page.locator('#front .m1-ic-mask').first().tap();
-   else await page.locator('#front .m1-ic-mask').first().click();
+   else await page.locator('#front .m1-ic-mask').first().press('Space');
    assert.equal(await page.locator('#front .m1-ic-mask-open').count(),1);
    await page.locator('#reveal').click();
    assert.equal(await page.locator('#front .m1-ic-mask-open').count(),2);
@@ -61,6 +61,11 @@ async function grade(page,value){
    await page.locator('#bury').click();await ready(page);await page.locator('#bury').click();
    await page.locator('#empty-queue').waitFor();assert.match(await page.locator('#counts').innerText(),/搁置 2/);
    await page.locator('#unbury').click();await ready(page);assert.equal(Object.keys((await state(page)).buried).length,0);
+   await page.locator('#scope').selectOption('all');await ready(page);
+   await grade(page,4);await grade(page,3);await ready(page);
+   assert.match(await page.locator('#m1-pos').innerText(),/第 2 \/ 2 张/,'browse follows the next card even when scoring changes sort order');
+   page.once('dialog',dialog=>dialog.accept());await page.locator('#reset').click();await ready(page);
+   await page.locator('#scope').selectOption('due');await ready(page);
    await configure(page,1);await grade(page,4);
    await page.locator('#empty-queue').waitFor();assert.equal(await page.locator('#undo').isVisible(),true);assert.equal(await page.locator('#undo').isDisabled(),false);
    await page.screenshot({path:'/tmp/anki-v34-'+width+'-empty-undo.png'});
