@@ -12,14 +12,14 @@ input[type=file]{width:100%;padding:12px;border:1px dashed var(--line);border-ra
 .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.row>*{flex-shrink:0}.stat{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}.note{font-size:13px;color:var(--muted);line-height:1.65}
 .notice{padding:11px 13px;border-radius:10px;background:#2563eb12;border:1px solid #2563eb33;font-size:13px;line-height:1.65}
 #log{white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:12px/1.6 ui-monospace,monospace;color:var(--muted)}
-#front,#back{min-height:100px;line-height:1.65;font-size:17px;overflow-wrap:anywhere}#front img,#back img{display:block;max-width:100%;height:auto;object-fit:contain;margin:8px auto}#front svg,#back svg{max-width:100%;height:auto}#front svg.anki-inline-icon,#back svg.anki-inline-icon{display:inline-block!important;width:26px!important;height:26px!important;max-width:26px!important;vertical-align:middle}
+#front,#back{min-height:100px;line-height:1.65;font-size:17px;overflow-wrap:anywhere}#front img,#back img{display:block;max-width:100%;height:auto;object-fit:contain;margin:8px auto}#front svg,#back svg{max-width:100%;height:auto}#front svg.anki-svg-figure,#back svg.anki-svg-figure{display:block;max-width:100%!important;width:100%!important;max-height:580px!important;height:auto!important}#front svg.anki-inline-icon,#back svg.anki-inline-icon{display:inline-block!important;width:26px!important;height:26px!important;max-width:26px!important;vertical-align:middle}
 #front img,#back img{cursor:zoom-in}.anki-occlusion{position:relative;max-width:100%}.anki-mask{position:absolute;inset:0;pointer-events:none}.anki-mask svg{width:100%;height:100%}.anki-mask img{display:block;width:100%;height:auto;max-width:100%}.anki-occlusion>img{display:block;width:100%;height:auto;max-width:100%}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
 .cardshell{min-height:240px}.hidden{display:none!important}.ratings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ratings button{padding:13px 5px}.rating-again{color:#e85b61}.rating-easy{color:#248f65}.tag{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted)}
 summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--line);overflow:hidden}.progress>div{height:100%;background:#2563eb;transition:width .2s}
 @media(max-width:550px){main{padding:16px 12px 50px}.panel{padding:14px}.ratings{gap:5px}.ratings button{font-size:12px}h1{font-size:20px}}
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">Web · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.5 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -131,24 +131,26 @@ function clean(html){
   let doc=new DOMParser().parseFromString('<div>'+safeString(html)+'</div>','text/html'),root=doc.body.firstElementChild;
   const bad='script,iframe,object,embed,form,button,input,link,meta,style,foreignObject,video,source';
   root.querySelectorAll(bad).forEach(x=>x.remove());
-  // Some Anki templates embed chevron controls as 24x24 SVG icons.
-  // The original inline CSS is deliberately stripped below; without a guard
-  // those icons inherit large default SVG dimensions on mobile browsers.
-  // Keep actual image-occlusion SVG overlays intact.
+  // Anki's card template sometimes includes SVG navigation controls. Removing
+  // Anki's own stylesheet makes their arrow glyphs fill the viewport. Ignore
+  // non-content SVG controls here; preserve SVG used for image occlusion masks.
   root.querySelectorAll('svg').forEach(svg=>{
-    if(svg.closest('.anki-mask')||svg.closest('.anki-occlusion'))return;
-    const viewBox=(svg.getAttribute('viewBox')||'').trim().split(/[\\s,]+/).map(Number);
-    const w=viewBox.length===4?viewBox[2]:Number(svg.getAttribute('width'));
-    const h=viewBox.length===4?viewBox[3]:Number(svg.getAttribute('height'));
-    const smallIcon=Number.isFinite(w)&&Number.isFinite(h)&&w>0&&h>0&&w<=48&&h<=48;
-    const names=((svg.getAttribute('class')||'')+' '+(svg.parentElement?.getAttribute('class')||'')+' '+(svg.getAttribute('aria-label')||'')).toLowerCase();
-    const arrowName=/\\b(chevron|prev|next|arrow-left|arrow-right|angle-left|angle-right|navigate-before|navigate-next)\\b/i.test(names);
-    const glyph=Array.from(svg.querySelectorAll('path,polyline,line')).map(x=>x.getAttribute('d')||x.getAttribute('points')||'').join(' ').replace(/[\\s,]/g,'').toLowerCase();
-    const chevronPath=/^(m?15[.,]?18[l-]?6-6(?:[l ]?6-6)?|m?9[.,]?18[l]?6-6(?:[l ]?-6-6)?|15,?18,?9,?12,?15,?6|9,?18,?15,?12,?9,?6)/i.test(glyph)||/m15,?18l-6-6,?6-6|m9,?18l6-6-6-6/i.test(glyph);
-    if((smallIcon&&arrowName)||(smallIcon&&chevronPath)){svg.remove();return;}
-    if(smallIcon&&svg.querySelectorAll('path,polyline,line,circle').length<=4){
-      svg.classList.add('anki-inline-icon');
+    if(svg.closest('.anki-mask'))return;
+    const vb=(svg.getAttribute('viewBox')||'').trim().split(/[\s,]+/).map(Number);
+    const width=vb.length===4?vb[2]:parseFloat(svg.getAttribute('width'));
+    const height=vb.length===4?vb[3]:parseFloat(svg.getAttribute('height'));
+    const name=((svg.getAttribute('class')||'')+' '+(svg.parentElement?.getAttribute('class')||'')+' '+(svg.getAttribute('aria-label')||'')).toLowerCase();
+    const geometry=svg.querySelectorAll('path,polyline,polygon,line,circle,ellipse,rect').length;
+    const pathData=Array.from(svg.querySelectorAll('path,polyline,polygon,line')).map(p=>p.getAttribute('d')||p.getAttribute('points')||'').join('');
+    const isIconLabel=/(chevron|prev|next|arrow|backward|forward|navigation|pager|icon)/i.test(name);
+    const isTinyViewbox=Number.isFinite(width)&&Number.isFinite(height)&&width>0&&height>0&&width<=64&&height<=64;
+    const isComplexFigure=geometry>=9||pathData.length>400;
+    // A decorative chevron can use a 512px viewbox or omit its viewbox; the
+    // earlier code checked only 24px viewboxes, and its regex was mis-escaped.
+    if(isIconLabel || ((isTinyViewbox||geometry<=3)&&!isComplexFigure)){
+      svg.remove();return;
     }
+    svg.classList.add('anki-svg-figure');
   });
   root.querySelectorAll('*').forEach(x=>{
     for(let a of [...x.attributes]){
