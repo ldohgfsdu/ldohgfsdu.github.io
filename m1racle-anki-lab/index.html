@@ -28,6 +28,9 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 #front #io-overlay svg,#back #io-overlay svg{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
 #front .anki-occlusion,#back .anki-occlusion{position:relative!important;display:block!important;width:100%!important;line-height:0!important}
 #front .anki-occlusion>img,#back .anki-occlusion>img{display:block!important;width:100%!important;height:auto!important;margin:0!important;max-width:100%!important}
+/* Avoid answer flashes: the base image is hidden until the question mask has decoded. */
+#front .anki-occlusion>img{visibility:hidden!important}
+#front .anki-occlusion.anki-safe-occlusion>img{visibility:visible!important}
 #front .anki-mask,#back .anki-mask{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;overflow:hidden!important;z-index:5!important;pointer-events:none!important}
 #front .anki-mask img,#back .anki-mask img{display:block!important;width:100%!important;height:100%!important;margin:0!important;max-width:100%!important;object-fit:fill!important}
 #front .anki-mask svg,#back .anki-mask svg{width:100%!important;height:100%!important;max-height:none!important}
@@ -35,7 +38,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.8 · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.9 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -219,6 +222,7 @@ async function renderHTML(el,text){
         catch{return false}
       }))).every(Boolean));
       const safe=!!vector||!!imageLoaded;
+      if(safe){wrapper.classList.add('anki-safe-occlusion');}
       if(!safe){
         base.style.setProperty('visibility','hidden','important');
         base.style.setProperty('display','none','important');
