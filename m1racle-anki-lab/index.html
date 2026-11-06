@@ -29,7 +29,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 <details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
 </section>
 <section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
-<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div></section>
+<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details></section>
 <section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、部分以 Question Mask / Answer Mask 保存的图片遮挡卡。<b>原生 Anki Image Occlusion 的复杂 SVG 遮挡及第三方自定义 JS 模板不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
 </main>
 <script>
@@ -273,6 +273,14 @@ async function showCurrent(){
   active=item;visible=false;
   $('reveal-area').classList.remove('hidden');$('grade').classList.add('hidden');$('back').classList.add('hidden');
   const s=sides(item);
+  const model=models[String(item.mid)]||{};
+  const record=(item.fields||[]).map((value,i)=>{
+    const name=model.flds?.[i]?.name||('字段'+(i+1));
+    const str=String(value||'');
+    const type=/<img\b/i.test(str)?'HTML图片':/<svg\b/i.test(str)?'SVG':mediaNames.has(str.trim())?'媒体文件名':/<[^>]+>/.test(str)?'HTML':'文本';
+    return (i+1)+'. '+name+': '+type+' / '+str.length+'字符'+(i===0&&looksLikeInternalId(str)?' [内部ID]':'');
+  });
+  $('card-debug').textContent='笔记类型：'+(model.name||item.mid)+'\n显示方式：'+s.mode+'\n字段：\n'+record.join('\n')+'\n模板数量：'+(model.tmpls?.length||0);
   $('head').innerHTML='<span class="tag">'+escapeHTML(decks[String(item.did)]||'牌组')+'</span><span class="stat">'+(index+1)+' / '+session.length+' · '+escapeHTML(s.mode)+'</span>';
   await renderHTML($('front'),s.front);await renderHTML($('back'),s.back);
 }
