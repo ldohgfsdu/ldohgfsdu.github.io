@@ -1,0 +1,44 @@
+name: M1racle Study integrated website regression
+on:
+  push:
+    paths:
+      - m1racle-study/**
+      - .github/workflows/test-study-integration.yml
+  pull_request:
+    paths:
+      - m1racle-study/**
+      - .github/workflows/test-study-integration.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run local state and cloud conflict tests
+        run: |
+          TZ=Asia/Shanghai node --test m1racle-study/tests/review-core.test.cjs
+          node --test m1racle-study/tests/cloud-sync.test.cjs
+      - name: Prepare pinned browser test runner
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Generate synthetic local card package
+        run: python3 m1racle-study/tests/generate_fixture.py
+      - name: Serve the exact Netlify publish directory
+        run: python3 -m http.server 8765 --bind 127.0.0.1 --directory m1racle-study/site > /tmp/study-server.log 2>&1 &
+      - name: Exercise all routes and embedded reviewer
+        run: node m1racle-study/tests/integration.cjs
+        env:
+          STUDY_TEST_URL: http://127.0.0.1:8765/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-v10-browser-evidence
+          path: /tmp/study-v10/*.png
+          if-no-files-found: ignore

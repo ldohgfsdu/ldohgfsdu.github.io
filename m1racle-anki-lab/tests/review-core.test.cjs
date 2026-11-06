@@ -118,3 +118,21 @@ test('vendored HTTP SHA-256 fallback matches Node crypto for small and large pac
     assert.equal(Buffer.from(sha256(data)).toString('hex'),createHash('sha256').update(data).digest('hex'));
   }
 });
+function progressFixture(){
+ const s=Core.empty();
+ const card={state:2,due:new Date(+now+86400000).toISOString(),last_review:now.toISOString(),stability:2,difficulty:5,reps:1,lapses:0,elapsed_days:0,scheduled_days:1,learning_steps:0};
+ return {format:'m1racle-anki-progress-v1',packageHash:'a'.repeat(64),state:Core.grade(s,rows[0],{card},4,now)};
+}
+test('progress backup restores ratings and caps and starts a fresh undo history',()=>{
+ const data=progressFixture(),restored=Core.restoreBackup(data,data.packageHash,rows,decks);
+ assert.deepEqual(restored.records,data.state.records);assert.deepEqual(restored.usage,data.state.usage);assert.equal(restored.undo,null);
+});
+test('progress backup rejects different package bytes and unknown cards',()=>{
+ const data=progressFixture();assert.throws(()=>Core.restoreBackup(data,'b'.repeat(64),rows,decks),/当前卡包/);
+ data.state.records[999]=data.state.records[1];assert.throws(()=>Core.restoreBackup(data,data.packageHash,rows,decks),/卡片记录/);
+});
+test('progress backup validates dates, scheduler values and daily options',()=>{
+ for(const mutate of [d=>d.state.records[1].card.due='invalid',d=>d.state.records[1].card.stability=-1,d=>d.state.options.all={newLimit:-1,reviewLimit:200},d=>d.state.usage['bad-day']={}]){
+  const data=progressFixture();mutate(data);assert.throws(()=>Core.restoreBackup(data,data.packageHash,rows,decks));
+ }
+});

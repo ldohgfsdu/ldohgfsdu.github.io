@@ -64,7 +64,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 <p id="status" class="note">优先选择左边约 10.57 MB 的绪论卡包。安卓文件选择器中的灰色文档图标不代表文件不可用；点文件卡片后应返回本页并开始读取。若无响应，可用 Chrome 浏览器打开此网页。360 MB 卡包暂不在本版支持范围内。</p>
 <details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
 </section>
-<section id="stats" class="panel hidden"><h2>② 学习队列</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">今日学习（遵守每日上限）</option><option value="all">浏览全部（可提前评分）</option></select></label></div><div id="counts" class="stat" aria-live="polite"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div><div class="row" style="margin-top:14px"><button id="undo" disabled>撤销上次评分</button><button id="unbury" disabled>恢复此牌组搁置卡</button></div><details style="margin-top:14px"><summary>本地学习选项</summary><form id="options-form"><p class="note">上限用于当前选择的牌组；父牌组上限同时生效。新卡与复习分别计数，当天的学习、重学重复不占上限。浏览全部可提前学习；暂停和搁置的卡须先恢复才能评分。</p><div class="options-grid"><label>每日新卡上限<input id="new-limit" type="number" min="0" max="100000" required value="20"></label><label>每日复习上限<input id="review-limit" type="number" min="0" max="100000" required value="200"></label><label>学习日开始（本地时间，时）<input id="day-start" type="number" min="0" max="23" required value="4"></label></div><button type="submit">保存学习选项</button></form></details><p class="note">此浏览器建立独立复习进度，尚未导入原卡包的调度、暂停状态和预设。学习日开始时间应用于整个卡包。</p></section>
+<section id="stats" class="panel hidden"><h2>② 学习队列</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">今日学习（遵守每日上限）</option><option value="all">浏览全部（可提前评分）</option></select></label></div><div id="counts" class="stat" aria-live="polite"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div><div class="row" style="margin-top:14px"><button id="undo" disabled>撤销上次评分</button><button id="unbury" disabled>恢复此牌组搁置卡</button></div><details style="margin-top:14px"><summary>复习记录备份与迁移</summary><p class="note">从旧实验站迁入时：先在旧站导入原卡包并导出记录，再在这里导入同一份卡包和记录文件。备份只含评分与学习选项，不含卡包图片，也不含账号密码。导入前请先导出当前记录。</p><div class="row"><button id="export-progress">导出复习记录</button><button id="import-progress">导入复习记录</button><input id="progress-file" type="file" accept=".json,application/json" hidden></div></details><details style="margin-top:14px"><summary>本地学习选项</summary><form id="options-form"><p class="note">上限用于当前选择的牌组；父牌组上限同时生效。新卡与复习分别计数，当天的学习、重学重复不占上限。浏览全部可提前学习；暂停和搁置的卡须先恢复才能评分。</p><div class="options-grid"><label>每日新卡上限<input id="new-limit" type="number" min="0" max="100000" required value="20"></label><label>每日复习上限<input id="review-limit" type="number" min="0" max="100000" required value="200"></label><label>学习日开始（本地时间，时）<input id="day-start" type="number" min="0" max="23" required value="4"></label></div><button type="submit">保存学习选项</button></form></details><p class="note">此浏览器建立独立复习进度，尚未导入原卡包的调度、暂停状态和预设。学习日开始时间应用于整个卡包。</p></section>
 <section id="empty-queue" class="panel hidden" aria-live="polite"></section>
 <section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="m1-nav" class="row hidden"><button id="m1-prev">上一张</button><span id="m1-pos" class="stat"></span><button id="m1-next">下一张</button></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details><div class="row" id="review-actions" style="margin-top:12px"><button id="suspend">暂停此卡</button><button id="bury">搁置到明天</button></div></section>
 <section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、以 Question Mask / Answer Mask 保存的图片遮挡卡，以及 <b>Kevin Image Cloze（PDF Guru）</b> 这类把遮挡矩形存进 Masks 字段的图片挖空卡：正面按归一化坐标还原遮挡层，可点击任意红条逐个原位揭晓，也可点击「显示答案」揭晓所有剩余遮挡；不生成第二张图片，并已移除模板自带导航箭头。<b>Anki 原生 Image Occlusion 的复杂 SVG 遮挡仍不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
@@ -773,6 +773,27 @@ document.addEventListener('keydown',e=>{
  if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest?.('input,textarea,select,button,[contenteditable="true"]'))return;
  if(e.key===' '&&active){e.preventDefault();if(visible)grade(3);else $('reveal').click();}
  else if(visible&&/^[1-4]$/.test(e.key)){e.preventDefault();grade(Number(e.key));}
+});
+
+function exportProgress(){
+ if(!packKey)return notice('请先导入卡包');
+ const data={format:'m1racle-anki-progress-v1',packageHash:packKey,exportedAt:new Date().toISOString(),state:study};
+ const blob=new Blob([JSON.stringify(data)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download='M1racle_Anki_progress_'+packKey.slice(0,12)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ notice('复习记录已导出；卡包图片未包含在此备份中');
+}
+$('export-progress').addEventListener('click',exportProgress);
+$('import-progress').addEventListener('click',()=>{if(!grading&&!rendering&&!importing)$('progress-file').click();});
+$('progress-file').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(grading||rendering||importing)throw new Error('请等待当前操作完成');
+  if(file.size>15*1024*1024)throw new Error('复习记录文件超过15MB');
+  const next=Core.restoreBackup(JSON.parse(await file.text()),packKey,rows,decks);
+  if(!confirm('用此备份替换当前卡包的本地评分和学习选项吗？请确认已导出需要保留的当前记录。'))return;
+  saveStudy(next);index=0;loadOptions();notice('复习记录已导入，未改变原卡包内容');refresh();
+ }catch(error){notice('复习记录未导入：'+error.message);}
+ finally{e.target.value='';}
 });
 window.addEventListener('error',e=>log('浏览器错误：'+e.message));
 })();
