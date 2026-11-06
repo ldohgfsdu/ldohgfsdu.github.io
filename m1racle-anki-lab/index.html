@@ -13,7 +13,7 @@ input[type=file]{width:100%;padding:12px;border:1px dashed var(--line);border-ra
 .notice{padding:11px 13px;border-radius:10px;background:#2563eb12;border:1px solid #2563eb33;font-size:13px;line-height:1.65}
 #log{white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:12px/1.6 ui-monospace,monospace;color:var(--muted)}
 #front,#back{min-height:100px;line-height:1.65;font-size:17px;overflow-wrap:anywhere}#front img,#back img{display:block;max-width:100%;height:auto;object-fit:contain;margin:8px auto}#front svg,#back svg{max-width:100%;height:auto}
-#front img,#back img{cursor:zoom-in}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
+#front img,#back img{cursor:zoom-in}.anki-occlusion{position:relative;max-width:100%}.anki-mask{position:absolute;inset:0;pointer-events:none}.anki-mask svg{width:100%;height:100%}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
 .cardshell{min-height:240px}.hidden{display:none!important}.ratings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ratings button{padding:13px 5px}.rating-again{color:#e85b61}.rating-easy{color:#248f65}.tag{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted)}
 summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--line);overflow:hidden}.progress>div{height:100%;background:#2563eb;transition:width .2s}
 @media(max-width:550px){main{padding:16px 12px 50px}.panel{padding:14px}.ratings{gap:5px}.ratings button{font-size:12px}h1{font-size:20px}}
@@ -94,9 +94,11 @@ function asModelMap(db){
   try{const c=query(db,'SELECT models,decks FROM col LIMIT 1')[0];if(c&&c.models)out=JSON.parse(c.models);if(c&&c.decks){let d=JSON.parse(c.decks);for(const [id,obj] of Object.entries(d))decks[id]=obj.name||id;}}catch(e){log('旧版模型表未找到：'+e.message)}
   try{for(const row of query(db,'SELECT id,name FROM decks'))decks[String(row.id)]=row.name}catch{}
   if(!Object.keys(out).length){
-    try{for(const r of query(db,'SELECT id,name FROM notetypes'))out[String(r.id)]={name:r.name,flds:[]}}catch{}
-    try{for(const r of query(db,'SELECT ntid,name,ord FROM fields ORDER BY ntid,ord')){let m=out[String(r.ntid)];if(m)m.flds.push({name:r.name})}}catch{}
+    try{for(const r of query(db,'SELECT id,name FROM notetypes'))out[String(r.id)]={name:r.name,flds:[],tmpls:[]}}catch{}
+    try{for(const r of query(db,'SELECT ntid,name,ord FROM fields ORDER BY ntid,ord')){let m=out[String(r.ntid)];if(m)m.flds[Number(r.ord)]={name:r.name}}}catch{}
+    try{for(const r of query(db,'SELECT ntid,ord,name,qfmt,afmt FROM templates ORDER BY ntid,ord')){let m=out[String(r.ntid)];if(m)m.tmpls[Number(r.ord)]={name:r.name,qfmt:r.qfmt,afmt:r.afmt}}}catch(e){log('模板表解析未完成：'+e.message)}
   }
+  for(const m of Object.values(out)){m.flds=Array.isArray(m.flds)?m.flds:[];m.tmpls=Array.isArray(m.tmpls)?m.tmpls:[];}
   return out;
 }
 async function mediaURL(name){
@@ -139,20 +141,97 @@ function cloze(s,ord,show){
     return show?'<b style="color:#2563eb">'+escapeHTML(answer)+'</b>':'<b style="color:#2563eb">['+escapeHTML(hint||'……')+']</b>';
   });
 }
+
+function ankiFieldMap(item){
+  const m=models[String(item.mid)]||{},map={};
+  (item.fields||[]).forEach((value,i)=>{
+    const label=String(m.flds?.[i]?.name||('字段'+(i+1))).trim().toLowerCase();
+    map[label]=String(value||'');
+  });
+  return map;
+}
+function imageValue(value){
+  let s=String(value||'').trim();
+  if(!s)return '';
+  if(!/<img\b|<svg\b/i.test(s)&&mediaNames.has(s)){
+    return '<img src="'+escapeHTML(s)+'" alt="图片">';
+  }
+  return s;
+}
+function bestCardField(item,answer=false){
+  const m=models[String(item.mid)]||{};
+  const fields=(item.fields||[]).map((v,i)=>({name:String(m.flds?.[i]?.name||''),value:String(v||''),i}));
+  const rank=({name,value,i})=>{
+    if(!value.trim())return -10000;
+    let s=0;
+    if(/<img\b|<svg\b/i.test(value)||mediaNames.has(value.trim()))s+=110;
+    if(/<[^>]+>/.test(value))s+=12;
+    if(value.length>50)s+=9;
+    if(/image|photo|picture|图片|图像|front|question|题面|正面/i.test(name))s+=35;
+    if(/back|answer|答案|背面/i.test(name))s+=(answer?45:-25);
+    if(/mask|遮挡/i.test(name))s+=30;
+    if(/^(id|guid|uuid|编号|标识)$/i.test(name))s-=200;
+    if(/^(?:[A-Z]:)?\d{12,}[^\s<>]*$/.test(value.trim()))s-=200;
+    if(/^(备注|notes|source|来源|extra)$/i.test(name))s-=15;
+    return s;
+  };
+  fields.sort((x,y)=>rank(y)-rank(x));
+  if(answer){
+    const match=fields.find(x=>/back|answer|答案|背面/i.test(x.name)&&x.value.trim());
+    if(match)return imageValue(match.value);
+  }
+  return imageValue(fields[0]?.value||'（无可显示字段）');
+}
+function renderAnkiTemplate(tpl,item,frontside){
+  const fields=ankiFieldMap(item),get=(label)=>{
+    const k=String(label).trim().toLowerCase();
+    if(k==='frontside')return frontside||'';
+    if(k==='tags')return '';
+    if(k.startsWith('cloze:'))return cloze(fields[k.slice(6)]||'',item.ord,!!frontside);
+    if(k.startsWith('text:'))return (fields[k.slice(5)]||'').replace(/<[^>]*>/g,'');
+    if(k.startsWith('type:'))return imageValue(fields[k.slice(5)]||'');
+    if(k.startsWith('hint:'))return imageValue(fields[k.slice(5)]||'');
+    return imageValue(fields[k]||'');
+  };
+  let out=String(tpl||'');
+  for(let j=0;j<5;j++){
+    const next=out.replace(/{{([#^])\s*([^{}]+?)\s*}}([\s\S]*?){{\/\s*\2\s*}}/g,(_,condition,field,body)=>{
+      const present=!!String(fields[String(field).trim().toLowerCase()]||'').trim();
+      return ((condition==='#')===present)?body:'';
+    });
+    if(next===out)break;
+    out=next;
+  }
+  return out.replace(/{{\s*([^{}]+?)\s*}}/g,(_,key)=>get(key));
+}
+function looksLikeInternalId(text){
+  const s=String(text||'').replace(/<[^>]+>/g,'').trim();
+  return /^([A-Z]:)?\d{12,}[^\s<>]*$/.test(s);
+}
 function sides(item){
-  const f=item.fields, m=models[String(item.mid)]||{},name=(m.name||'').toLowerCase();
+  const m=models[String(item.mid)]||{},f=item.fields||{},name=String(m.name||'').toLowerCase();
   const questionMask=byField(m,f,['Question Mask','QuestionMask','Question Image','QMask']);
   const answerMask=byField(m,f,['Answer Mask','AnswerMask','Answer Image','AMask']);
-  const head=byField(m,f,['Header','Heading']),ex=byField(m,f,['Back Extra','Extra']);
-  if(questionMask&&answerMask){return {front:(head||'')+questionMask,back:(head||'')+answerMask+(ex||''),mode:'图片遮挡模板（预览）'};}
-  let clozeField=byField(m,f,['Text','Cloze'])||f[0];
-  if((name.includes('cloze')||name.includes('填空'))&&/{{c\d+::/.test(clozeField)){
-    return {front:cloze(clozeField,item.ord,false),back:cloze(clozeField,item.ord,true)+(ex||''),mode:'文字填空'};
+  const base=byField(m,f,['Image','Original Image','图片','图像']);
+  const header=byField(m,f,['Header','Heading']);
+  const extra=byField(m,f,['Back Extra','Extra']);
+  if(questionMask&&answerMask){
+    const block=(mask)=>'<div class="anki-occlusion">'+imageValue(base||'')+'<div class="anki-mask">'+imageValue(mask)+'</div></div>';
+    return {front:(header||'')+block(questionMask),back:(header||'')+block(answerMask)+(extra||''),mode:'图片遮挡预览'};
   }
-  if(/image.occlusion/i.test(name)&&f.some(x=>/image-occlusion:|{{c\d+::/.test(x))){
-    return {front:'<p>检测到 Anki 原生图片遮挡字段。当前预览器尚未完整重建其遮挡图层。</p>'+(byField(m,f,['Image'])||f[0]),back:'<p>原生遮挡需要进一步适配；请不要将本卡视为验证通过。</p>',mode:'原生图片遮挡（待适配）'};
+  const cf=byField(m,f,['Text','Cloze'])||f[0];
+  if((name.includes('cloze')||name.includes('填空'))&&/{{c\d+::/.test(cf)){
+    return {front:cloze(cf,item.ord,false),back:cloze(cf,item.ord,true)+(extra||''),mode:'文字填空'};
   }
-  return {front:f[0]||'（空正面）',back:(f[1]||'（无背面字段）')+(ex&&ex!==f[1]?'<hr/>'+ex:''),mode:'基础卡'};
+  const tpl=m.tmpls?.[item.ord]||m.tmpls?.[0];
+  if(tpl?.qfmt&&tpl?.afmt){
+    const front=renderAnkiTemplate(tpl.qfmt,item,'');
+    const back=renderAnkiTemplate(tpl.afmt,item,front);
+    if(front&&front.replace(/<[^>]*>/g,'').trim()&&!looksLikeInternalId(front)){
+      return {front,back:back||bestCardField(item,true),mode:'原始卡片模板（安全预览）'};
+    }
+  }
+  return {front:bestCardField(item,false),back:bestCardField(item,true),mode:'按实际字段识别'};
 }
 function revKey(cid){return 'm1racle_anki_review_'+packKey+'_'+cid;}
 function loadReview(cid){try{return JSON.parse(localStorage.getItem(revKey(cid))||'null')}catch{return null}}
