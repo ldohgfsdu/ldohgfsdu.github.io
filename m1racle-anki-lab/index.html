@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"/>
-<title>M1racle Study · Anki 卡包实验页 v3.2</title>
+<title>M1racle Study · Anki 卡包实验页 v3.4</title>
 <style>
 :root{font-family:system-ui,-apple-system,"PingFang SC","Microsoft Yahei",sans-serif;color-scheme:light dark;--bg:#f5f7fb;--fg:#152238;--muted:#66758c;--card:#fff;--line:#e1e7ef;--main:#2563eb}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1522;--fg:#e9eff7;--muted:#96a8c0;--card:#1a2637;--line:#334459;--main:#8aafff}}
@@ -16,6 +16,7 @@ input[type=file]{width:100%;padding:12px;border:1px dashed var(--line);border-ra
 #front img,#back img{cursor:zoom-in}.anki-occlusion{position:relative;max-width:100%}.anki-mask{position:absolute;inset:0;pointer-events:none}.anki-mask svg{width:100%;height:100%}.anki-mask img{display:block;width:100%;height:auto;max-width:100%}.anki-occlusion>img{display:block;width:100%;height:auto;max-width:100%}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
 .cardshell{min-height:240px}.hidden{display:none!important}.ratings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ratings button{padding:13px 5px}.rating-again{color:#e85b61}.rating-easy{color:#248f65}.tag{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted)}
 summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--line);overflow:hidden}.progress>div{height:100%;background:#2563eb;transition:width .2s}
+.options-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:12px 0}.options-grid label{font-size:13px;line-height:1.6}.options-grid input{display:block;width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}.ratings small{display:block;font-size:11px;font-weight:400;margin-top:4px;color:var(--muted)}#empty-queue{line-height:1.7}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--main);outline-offset:3px}
 @media(max-width:550px){main{padding:16px 12px 50px}.panel{padding:14px}.ratings{gap:5px}.ratings button{font-size:12px}h1{font-size:20px}}
 
 /* Canonical Image Occlusion Enhanced layout:
@@ -54,7 +55,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入、遮挡与本地复习 · 实验版</p></div><span class="tag">实验版 v3.3 · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入、遮挡与本地复习 · 实验版</p></div><span class="tag">实验版 v3.4 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -63,13 +64,17 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 <p id="status" class="note">优先选择左边约 10.57 MB 的绪论卡包。安卓文件选择器中的灰色文档图标不代表文件不可用；点文件卡片后应返回本页并开始读取。若无响应，可用 Chrome 浏览器打开此网页。360 MB 卡包暂不在本版支持范围内。</p>
 <details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
 </section>
-<section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
-<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="m1-nav" class="row hidden"><button id="m1-prev">上一张</button><span id="m1-pos" class="stat"></span><button id="m1-next">下一张</button></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details><div class="row" id="review-actions" style="margin-top:12px"><button id="undo" disabled>撤销上次评分</button><button id="suspend">暂停此卡</button></div></section>
+<section id="stats" class="panel hidden"><h2>② 学习队列</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">今日学习（遵守每日上限）</option><option value="all">浏览全部（可提前评分）</option></select></label></div><div id="counts" class="stat" aria-live="polite"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div><div class="row" style="margin-top:14px"><button id="undo" disabled>撤销上次评分</button><button id="unbury" disabled>恢复此牌组搁置卡</button></div><details style="margin-top:14px"><summary>本地学习选项</summary><form id="options-form"><p class="note">上限用于当前选择的牌组；父牌组上限同时生效。新卡与复习分别计数，当天的学习、重学重复不占上限。浏览全部可提前学习；暂停和搁置的卡须先恢复才能评分。</p><div class="options-grid"><label>每日新卡上限<input id="new-limit" type="number" min="0" max="100000" required value="20"></label><label>每日复习上限<input id="review-limit" type="number" min="0" max="100000" required value="200"></label><label>学习日开始（本地时间，时）<input id="day-start" type="number" min="0" max="23" required value="4"></label></div><button type="submit">保存学习选项</button></form></details><p class="note">此浏览器建立独立复习进度，尚未导入原卡包的调度、暂停状态和预设。学习日开始时间应用于整个卡包。</p></section>
+<section id="empty-queue" class="panel hidden" aria-live="polite"></section>
+<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="m1-nav" class="row hidden"><button id="m1-prev">上一张</button><span id="m1-pos" class="stat"></span><button id="m1-next">下一张</button></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details><div class="row" id="review-actions" style="margin-top:12px"><button id="suspend">暂停此卡</button><button id="bury">搁置到明天</button></div></section>
 <section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、以 Question Mask / Answer Mask 保存的图片遮挡卡，以及 <b>Kevin Image Cloze（PDF Guru）</b> 这类把遮挡矩形存进 Masks 字段的图片挖空卡：正面按归一化坐标还原遮挡层，可点击任意红条逐个原位揭晓，也可点击「显示答案」揭晓所有剩余遮挡；不生成第二张图片，并已移除模板自带导航箭头。<b>Anki 原生 Image Occlusion 的复杂 SVG 遮挡仍不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
 </main>
+<script src="./review-core.js"></script>
 <script>
 (function(){
 let SQL,JSZip,fzstd,fsrsModule,scheduler,zip,mediaNames=new Map(),mediaNumber=new Map(),mediaUrls=new Map(),rows=[],models={},decks={},packKey='',dbcache,active=null,session=[],index=0,visible=false,revealInPlace=false;
+const Core=window.M1racleReview;
+let study=Core.empty(),storageKey='',storedRaw=null,generation=0,rendering=false,queueTimer=null,importing=false;
 const $=x=>document.getElementById(x);
 const log=(s)=>{$('log').textContent+=(new Date().toLocaleTimeString()+' '+String(s)+'\n');};
 const notice=s=>{$('status').textContent=s;log(s)};
@@ -82,6 +87,10 @@ async function libraries(){
  if(!JSZip){await loadLibrary('./vendor/jszip.min.js');JSZip=window.JSZip;if(!JSZip)throw new Error('JSZip 加载后没有初始化');}
  if(!fzstd){await loadLibrary('./vendor/fzstd.js');fzstd=window.fzstd?.decompress;if(!fzstd)throw new Error('Zstandard 解压库加载失败');}
  if(!SQL){if(!window.initSqlJs)await loadLibrary('./vendor/sql-wasm.js');SQL=await window.initSqlJs({locateFile:n=>'./vendor/'+n});}
+ if(!fsrsModule){
+   try{await loadLibrary('./vendor/fsrs.js');fsrsModule=window.M1racleFSRS;scheduler=fsrsModule.fsrs();}
+   catch(e){log('FSRS 未加载，评分暂不可用：'+e.message);}
+ }
 }
 function query(db,sql){
   const r=db.exec(sql)[0];if(!r)return [];
@@ -156,8 +165,9 @@ function asModelMap(db){
 async function mediaURL(name){
   if(mediaUrls.has(name))return mediaUrls.get(name);
   const fileNo=mediaNames.get(name);if(fileNo===undefined)return null;
-  const entry=zip.file(fileNo);if(!entry)return null;
+  const sourceZip=zip,entry=sourceZip.file(fileNo);if(!entry)return null;
   let bytes=uncompress(await entry.async('uint8array'));
+  if(sourceZip!==zip)return null;
   let ext=name.toLowerCase().split('.').pop();
   let mime=({'png':'image/png','jpg':'image/jpeg','jpeg':'image/jpeg','gif':'image/gif','webp':'image/webp','svg':'image/svg+xml','mp3':'audio/mpeg','ogg':'audio/ogg'}[ext]||'application/octet-stream');
   const url=URL.createObjectURL(new Blob([bytes],{type:mime}));mediaUrls.set(name,url);return url;
@@ -221,7 +231,7 @@ function clean(html){
   });
   return root;
 }
-async function renderHTML(el,text){
+async function renderHTML(el,text,view=generation){
   const root=clean(text);
   const imgs=[...root.querySelectorAll('img')];
   await Promise.all(imgs.map(async img=>{
@@ -230,6 +240,7 @@ async function renderHTML(el,text){
     try{name=decodeURIComponent(name)}catch{}
     let url=await mediaURL(name);if(url){img.setAttribute('src',url);img.alt=name;if(!img.hasAttribute('data-m1-ic'))img.addEventListener('click',()=>{if(img.style.maxWidth==='none'){img.style.maxWidth='100%';img.style.width='';}else{img.style.maxWidth='none';img.style.width='auto';}})}else{img.replaceWith(document.createTextNode('[未找到图片：'+name+']'))}
   }));
+  if(view!==generation)return;
   el.replaceChildren(...root.childNodes);
   // clean() 会删除所有 inline style，遮挡矩形坐标改由 data-* 携带，插入 DOM 后再还原。
   el.querySelectorAll('.m1-ic-mask').forEach(m=>{
@@ -452,73 +463,100 @@ function sides(item){
   }
   return {front:bestCardField(item,false),back:bestCardField(item,true),mode:'按实际字段识别'};
 }
-function revKey(cid){return 'm1racle_anki_review_'+packKey+'_'+cid;}
-function suspendKey(cid){return 'm1racle_anki_suspend_'+packKey+'_'+cid;}
-function undoKey(){return 'm1racle_anki_undo_'+packKey;}
-function loadReview(cid){try{return JSON.parse(localStorage.getItem(revKey(cid))||'null')}catch{return null}}
-function isSuspended(item){return localStorage.getItem(suspendKey(item.cid))==='1'}
-function getReviewState(item){
- const r=loadReview(item.cid);
- if(!r)return 'new';
- const state=Number(r.card?.state??0);
- return state===2?'review':(state===1||state===3)?'learning':'new';
+function loadReview(cid){return study.records[cid]||null;}
+function isSuspended(item){return !!study.suspended[item.cid];}
+function getReviewState(item){return Core.classify(item,study);}
+function due(item){return Core.due(item,study,new Date());}
+function deckMatches(item,did){return Core.matches(item,did,decks);}
+function scopeRows(){return Core.selectQueue(rows,study,decks,$('deck').value,$('scope').value,new Date());}
+function saveStudy(next){
+ if(localStorage.getItem(storageKey)!==storedRaw)throw new Error('其他页面已修改复习进度，请恢复卡包后重试');
+ const raw=JSON.stringify(next);
+ localStorage.setItem(storageKey,raw);
+ study=next;storedRaw=raw;
 }
-function due(item){
- if(isSuspended(item))return false;
- const r=loadReview(item.cid);
- if(!r)return true;
- const t=new Date(r.card?.due||r.due).getTime();
- if(!Number.isFinite(t))return true;
- // Review cards are due on their local calendar day; learning steps are minute-accurate.
- if(getReviewState(item)==='review'){
-   const end=new Date();end.setHours(23,59,59,999);
-   return t<=end.getTime();
+function loadStudy(file){
+ storageKey='m1racle_anki_state_'+packKey;
+ storedRaw=localStorage.getItem(storageKey);
+ if(storedRaw!==null){study=Core.normalize(JSON.parse(storedRaw));return;}
+ study=Core.empty();
+ const legacy=file.name+'_'+file.size;
+ const bindingKey='m1racle_anki_legacy_binding_'+legacy;
+ const binding=localStorage.getItem(bindingKey);
+ if(!binding||binding===packKey){
+   for(const row of rows){
+     const cid=String(row.cid),raw=localStorage.getItem('m1racle_anki_review_'+legacy+'_'+cid);
+     if(raw){
+       const record=JSON.parse(raw);study.records[cid]=record;
+       const history=record.history?.length?record.history:[{at:record.reviewedAt,state:record.card?.state}];
+       let previous=null;
+       for(const event of history){
+         if(!Number.isFinite(Date.parse(event.at)))continue;
+         const day=Core.dayKey(event.at,study.dayStart),did=String(row.did);
+         const kind=!previous?'new':Number(previous.state)===2||Core.dayKey(previous.at,study.dayStart)!==day?'review':null;
+         if(kind){study.usage[day]??={};study.usage[day][did]??={new:0,review:0};study.usage[day][did][kind]++;}
+         previous=event;
+       }
+     }
+     if(localStorage.getItem('m1racle_anki_suspend_'+legacy+'_'+cid)==='1')study.suspended[cid]=true;
+   }
+   localStorage.setItem(bindingKey,packKey);
  }
- return t<=Date.now();
+ // Original v3.3 keys remain available if recovery is ever needed.
+ saveStudy(study);
 }
-function deckMatches(item,did){
- if(did==='all'||String(item.did)===did)return true;
- const selected=decks[did]||'',candidate=decks[String(item.did)]||'';
- return !!selected&&candidate.startsWith(selected+'::');
-}
-function sortQueue(a,b){
- const rank=x=>getReviewState(x)==='learning'?0:getReviewState(x)==='review'?1:2;
- const diff=rank(a)-rank(b);if(diff)return diff;
- const ad=Date.parse(loadReview(a.cid)?.card?.due||'')||0;
- const bd=Date.parse(loadReview(b.cid)?.card?.due||'')||0;
- return ad-bd||Number(a.cid)-Number(b.cid);
-}
-function scopeRows(){
- const did=$('deck').value;
- return rows.filter(r=>deckMatches(r,did)&&($('scope').value==='all'||due(r))).sort(sortQueue);
+function loadOptions(){
+ const options=Core.settings(study,$('deck').value);
+ $('new-limit').value=options.newLimit;$('review-limit').value=options.reviewLimit;$('day-start').value=study.dayStart;
 }
 function updateActions(){
- $('undo').disabled=!packKey||!localStorage.getItem(undoKey());
- if(active){
-  const suspended=isSuspended(active);
-  $('suspend').textContent=suspended?'恢复此卡':'暂停此卡';
-  $('suspend').disabled=false;
- }else{$('suspend').disabled=true;}
+ const busy=rendering||grading||importing;
+ $('undo').disabled=!study.undo||busy;
+ $('unbury').disabled=busy||!rows.some(row=>deckMatches(row,$('deck').value)&&Core.isBuried(row,study,new Date()));
+ $('suspend').disabled=!active||busy;$('bury').disabled=!active||busy;
+ $('suspend').textContent=active&&isSuspended(active)?'恢复此卡':'暂停此卡';
+ const blocked=!active||busy||isSuspended(active)||Core.isBuried(active,study,new Date());
+ for(const button of $('grade').querySelectorAll('button'))button.disabled=blocked||!scheduler;
+ $('reveal').disabled=!active||busy;
+ $('file').disabled=grading||importing;$('restore').disabled=grading||importing;
 }
 function updateStats(){
  if(!rows.length)return;
- const did=$('deck').value,filtered=rows.filter(r=>deckMatches(r,did));
- let counts={new:0,learning:0,review:0,suspended:0};
- for(const card of filtered){
-   if(isSuspended(card))counts.suspended++;
-   else counts[getReviewState(card)]++;
- }
- const dueCount=filtered.filter(due).length;
- const reviewed=filtered.filter(r=>!!loadReview(r.cid)).length;
- $('counts').textContent='新卡 '+counts.new+' · 学习中 '+counts.learning+' · 复习中 '+counts.review+' · 暂停 '+counts.suspended+' · 今天待学 '+dueCount+' · 已评分 '+reviewed;
- $('bar').style.width=(filtered.length?Math.round(reviewed/filtered.length*100):0)+'%';
+ const did=$('deck').value,filtered=rows.filter(row=>deckMatches(row,did));
+ const counts=Core.counts(rows,study,decks,did,new Date());
+ $('counts').textContent='新卡 '+counts.new+' · 学习中 '+counts.learning+' · 重学 '+counts.relearning+' · 复习中 '+counts.review+' · 暂停 '+counts.suspended+' · 搁置 '+counts.buried+' · 今天待学 '+counts.available+' · 已评分 '+counts.reviewed;
+ $('bar').style.width=(filtered.length?Math.round(counts.reviewed/filtered.length*100):0)+'%';
  updateActions();
 }
+function intervalLabel(time,now){
+ const minutes=Math.max(1,Math.round((+new Date(time)-+now)/60000));
+ return minutes<60?minutes+' 分钟':minutes<1440?Math.round(minutes/60)+' 小时':Math.round(minutes/1440)+' 天';
+}
+function updateRatingLabels(){
+ if(!active||!scheduler)return;
+ const now=new Date(),saved=loadReview(active.cid);
+ for(const button of $('grade').querySelectorAll('button')){
+   const value=Number(button.dataset.grade),card=saved?JSON.parse(JSON.stringify(saved.card)):fsrsModule.createEmptyCard();
+   if(card.due)card.due=new Date(card.due);if(card.last_review)card.last_review=new Date(card.last_review);
+   const result=scheduler.next(card,now,value);
+   button.textContent=['','重来','困难','良好','简单'][value];
+   const label=document.createElement('small');label.textContent='约 '+intervalLabel(result.card.due,now);button.append(label);
+ }
+}
 async function showCurrent(){
+  clearTimeout(queueTimer);const view=++generation;rendering=true;
   session=scopeRows();if(index>=session.length)index=0;updateStats();
   const item=session[index];
   $('review').classList.toggle('hidden',!item);
-  if(!item){active=null;updateActions();if(rows.length)notice('当前筛选范围没有待复习卡片，可切换为“全部卡片”或解除暂停。');return;}
+  $('empty-queue').classList.toggle('hidden',!!item||!rows.length);
+  if(!item){
+    active=null;rendering=false;visible=false;updateActions();
+    const now=new Date(),counts=Core.counts(rows,study,decks,$('deck').value,now);
+    const wake=Core.nextWake(rows,study,decks,$('deck').value,now);
+    $('empty-queue').textContent=(counts.due?'当前每日上限已用完。':'当前没有可学卡片。')+' 暂停 '+counts.suspended+' 张，搁置 '+counts.buried+' 张。下次队列检查：'+new Date(wake).toLocaleString('zh-CN')+'。可以撤销上次评分、调整上限或浏览全部卡片。';
+    queueTimer=setTimeout(()=>{if(!active)showCurrent().catch(e=>notice(e.message));},Math.max(250,Math.min(60000,wake-+now+50)));
+    return;
+  }
   active=item;visible=false;revealInPlace=false;updateActions();
   $('reveal-area').classList.remove('hidden');$('grade').classList.add('hidden');$('back').classList.add('hidden');
   const s=sides(item);
@@ -534,77 +572,76 @@ async function showCurrent(){
   $('head').innerHTML='<span class="tag">'+escapeHTML(decks[String(item.did)]||'牌组')+'</span><span class="stat">'+(index+1)+' / '+session.length+' · '+escapeHTML(s.mode)+'</span>';
   $('m1-pos').textContent='第 '+(index+1)+' / '+session.length+' 张';
   $('m1-nav').classList.remove('hidden');
-  await renderHTML($('front'),s.front);
+  $('front').textContent='正在加载卡片…';$('back').replaceChildren();
+  await renderHTML($('front'),s.front,view);if(view!==generation)return;
   if(revealInPlace)updateMaskRevealUI();
   else $('reveal').textContent='显示答案';
   if(revealInPlace){
     // Prepare optional notes without a second copy of the original image.
     $('back').replaceChildren();
     if(s.answerNotes){
-      await renderHTML($('back'),s.answerNotes);
+      await renderHTML($('back'),s.answerNotes,view);if(view!==generation)return;
     }
   }else{
-    await renderHTML($('back'),s.back);
+    await renderHTML($('back'),s.back,view);if(view!==generation)return;
   }
+  rendering=false;updateActions();updateRatingLabels();
 }
 let grading=false;
 async function grade(value){
- if(!active||!visible||grading||isSuspended(active))return;
- grading=true;
- const gradedId=active.cid;
+ if(!active||!visible||grading||rendering||importing||isSuspended(active)||Core.isBuried(active,study,new Date()))return;
+ grading=true;updateActions();
+ const gradedItem=active,gradedPack=packKey;
+ let committed=false;
  try{
-  if(!fsrsModule){await loadLibrary('./vendor/fsrs.js');fsrsModule=window.M1racleFSRS;if(!fsrsModule)throw new Error('FSRS 复习模块未加载');scheduler=fsrsModule.fsrs();}
-  const key=revKey(gradedId);
-  const prior=localStorage.getItem(key);
-  let r=loadReview(gradedId),c=r?.card||fsrsModule.createEmptyCard();
-  if(c.due)c.due=new Date(c.due);
-  if(c.last_review)c.last_review=new Date(c.last_review);
-  const now=new Date(),result=scheduler.next(c,now,value);
-  const history=(r?.history||[]).slice(-199);
-  history.push({at:now.toISOString(),rating:value,due:result.card.due,state:result.card.state});
-  const after=JSON.stringify({card:result.card,due:result.card.due,reviewedAt:now.toISOString(),grade:value,history});
-  // A one-step undo snapshot is saved before any queue transition.
-  localStorage.setItem(undoKey(),JSON.stringify({cid:gradedId,prior,after,at:now.toISOString()}));
-  localStorage.setItem(key,after);
+  if(!scheduler)throw new Error('FSRS 复习模块未加载，请重新导入卡包');
+  const prior=loadReview(gradedItem.cid),card=prior?JSON.parse(JSON.stringify(prior.card)):fsrsModule.createEmptyCard();
+  if(card.due)card.due=new Date(card.due);if(card.last_review)card.last_review=new Date(card.last_review);
+  const now=new Date(),result=scheduler.next(card,now,value);
+  if(gradedPack!==packKey)throw new Error('当前卡包已切换');
+  saveStudy(Core.grade(study,gradedItem,result,value,now));committed=true;
   notice('已记录评分；下次到期：'+new Date(result.card.due).toLocaleString('zh-CN')+'（可撤销）');
-  session=scopeRows();if(index>=session.length)index=0;
+  session=scopeRows();
+  // Browse mode keeps every card in the list, so advance past the graded card.
+  if($('scope').value==='all'&&session.length)index=(index+1)%session.length;
+  else if(index>=session.length)index=0;
   await showCurrent();
- }catch(e){notice('FSRS复习记录未保存：'+(e.message||e));}
- finally{grading=false;}
+ }catch(e){rendering=false;notice((committed?'评分已保存，卡片刷新失败：':'FSRS复习记录未保存：')+(e.message||e));}
+ finally{grading=false;updateActions();}
 }
-function undoLastGrade(){
- if(!packKey)return;
- let info=null;try{info=JSON.parse(localStorage.getItem(undoKey())||'null')}catch{}
- if(!info)return notice('没有可撤销的评分记录');
- // Refuse to overwrite changes made since last action.
- const target=revKey(info.cid);
- if(localStorage.getItem(target)!==info.after)return notice('该卡评分记录已改变，无法安全撤销');
- if(info.prior===null)localStorage.removeItem(target);
- else localStorage.setItem(target,info.prior);
- localStorage.removeItem(undoKey());
- const next=scopeRows(),position=next.findIndex(r=>String(r.cid)===String(info.cid));
- index=Math.max(0,position);
- notice('上次评分已撤销，卡片复习状态已恢复');
- showCurrent().catch(e=>notice('撤销后刷新失败：'+e.message));
+async function undoLastGrade(){
+ if(!packKey||grading||rendering||importing)return;
+ try{
+  const cid=study.undo?.cid;
+  saveStudy(Core.undo(study));
+  const next=scopeRows(),position=next.findIndex(row=>String(row.cid)===String(cid));index=Math.max(0,position);
+  notice('上次评分已撤销，卡片复习状态和每日额度已恢复');await showCurrent();
+ }catch(e){rendering=false;notice('撤销失败：'+e.message);updateActions();}
 }
-function toggleSuspend(){
- if(!active)return;
- const key=suspendKey(active.cid);
- if(isSuspended(active)){localStorage.removeItem(key);notice('此卡已恢复到学习队列');}
- else{localStorage.setItem(key,'1');notice('此卡已暂停，不再计入今日到期队列');}
- const next=scopeRows();if(index>=next.length)index=0;
- showCurrent().catch(e=>notice('更新队列失败：'+e.message));
+async function toggleSuspend(){
+ if(!active||grading||rendering||importing)return;
+ try{
+  const wasSuspended=isSuspended(active);saveStudy(Core.suspend(study,active.cid));
+  notice(wasSuspended?'此卡已恢复到学习队列':'此卡已暂停，不再计入今日学习队列');await showCurrent();
+ }catch(e){rendering=false;notice('暂停状态未更新：'+e.message);updateActions();}
 }
 function openDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error('浏览器不支持 IndexedDB'));const req=indexedDB.open('m1racle-anki-local',1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('packages'))req.result.createObjectStore('packages')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function storeFile(file){const db=await openDB();await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(file,'last');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}
 async function restoreFile(){let db=await openDB();let f=await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readonly');let req=tx.objectStore('packages').get('last');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});db.close();if(!f)throw new Error('浏览器没有保存过卡包');return f;}
 async function importFile(file,save){
+ if(importing||grading)throw new Error('请等待当前操作完成');
+ importing=true;generation++;clearTimeout(queueTimer);updateActions();
+ try{
  if(!file)throw new Error('尚未选择文件，请点击文件卡片（不是长按）。');if(!/\.(apkg|colpkg|zip)$/i.test(file.name))throw new Error('这不是 .apkg / .colpkg / .zip 格式的卡包：'+file.name);if(file.size>120*1024*1024)throw new Error('卡包 '+(file.size/1024/1024).toFixed(1)+' MB，超过当前网页实验版的120 MB上限。请先选择约10.57 MB的绪论卡包；360 MB卡包需要分批/流式解析，不能直接在手机内存中读取。');
  notice('加载解压与 SQLite 组件……');await libraries();
+ $('stats').classList.add('hidden');$('review').classList.add('hidden');$('empty-queue').classList.add('hidden');
  for(const u of mediaUrls.values())URL.revokeObjectURL(u);
  mediaUrls.clear();mediaNames.clear();mediaNumber.clear();decks={};models={};rows=[];index=0;
  notice('读取 ZIP 归档 '+file.name);
- zip=await JSZip.loadAsync(await file.arrayBuffer());
+ const buffer=await file.arrayBuffer();
+ const hash=window.crypto?.subtle?new Uint8Array(await crypto.subtle.digest('SHA-256',buffer)):(await import('./vendor/noble/sha2.js')).sha256(new Uint8Array(buffer));
+ const identity=[...hash].map(x=>x.toString(16).padStart(2,'0')).join('');
+ zip=await JSZip.loadAsync(buffer);
  const dbName=['collection.anki21b','collection.anki21','collection.anki2'].find(n=>zip.file(n));
  if(!dbName)throw new Error('没有找到 collection.anki21b / .anki21 / .anki2');
  notice('数据库格式：'+dbName);
@@ -619,22 +656,24 @@ async function importFile(file,save){
  db.close();
  let mediaType='无';
  if(zip.file('media')){try{mediaType=decodeMedia(await zip.file('media').async('uint8array'))}catch(e){log('媒体索引失败：'+e.message);mediaType='未能识别';}}
- packKey=file.name+'_'+file.size;active=null;
+ packKey=identity;active=null;loadStudy(file);
  $('stats').classList.remove('hidden');const options=[['all','所有牌组']];
- for(const did of [...new Set(rows.map(x=>String(x.did)))])options.push([did,decks[did]||('牌组 '+did)]);
+ const ids=new Set([...rows.map(x=>String(x.did)),...Object.keys(decks).filter(did=>rows.some(row=>deckMatches(row,did)))]);
+ for(const did of [...ids].sort((a,b)=>(decks[a]||a).localeCompare(decks[b]||b)))options.push([did,decks[did]||('牌组 '+did)]);
  $('deck').innerHTML='';
  for(const [val,label] of options){let o=document.createElement('option');o.value=val;o.textContent=label;$('deck').append(o)}
  $('meta').textContent='文件 '+file.name+' · 笔记 '+counts.notes+' · 卡片 '+counts.cards+' · 已读取 '+rows.length+' · 媒体 '+mediaNames.size+'（'+mediaType+'） · 笔记类型 '+Object.keys(models).length;
  if(Number(counts.cards)>rows.length)log('安全上限：本次仅加载前60000张卡');
  if(!mediaNames.size)log('提示：媒体索引为空或未识别，带图片的卡片可能无法完整显示');
  if(save){try{await storeFile(file);log('卡包已经保存到此浏览器 IndexedDB')}catch(e){log('浏览器本地备份失败：'+e.message)}}
- notice('成功载入 '+rows.length+' 张卡。点击显示答案开始复习。');
+ loadOptions();notice('成功载入 '+rows.length+' 张卡。本地复习进度独立于原卡包。'+(scheduler?'':'FSRS 未加载，暂不能评分。'));
  await showCurrent();
+ }finally{importing=false;rendering=false;updateActions();}
 }
 $('file').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f){notice('文件选择器已关闭，但未选中文件。请单击对应文件卡片。');return;} notice('已选中 '+f.name+'（'+(f.size/1024/1024).toFixed(2)+' MB），准备读取。');try{await importFile(f,true)}catch(err){notice('导入失败：'+(err.message||err));}finally{e.target.value='';}});
 $('restore').addEventListener('click',async()=>{try{await importFile(await restoreFile(),false)}catch(e){notice('恢复失败：'+e.message)}});
-$('deck').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
-$('scope').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
+$('deck').addEventListener('change',()=>{index=0;loadOptions();refresh()});
+$('scope').addEventListener('change',()=>{index=0;refresh()});
 // Kevin Image Cloze: both interaction modes mutate only the existing overlay.
 // Individual clicks uncover one region, while the main button uncovers all remaining regions.
 function updateMaskRevealUI(){
@@ -655,7 +694,7 @@ function updateMaskRevealUI(){
     $('grade').classList.add('hidden');
     $('back').classList.add('hidden');
   }else{
-    visible=true;
+    visible=true;updateRatingLabels();updateActions();
     $('reveal-area').classList.add('hidden');
     $('grade').classList.remove('hidden');
     if($('back').children.length)$('back').classList.remove('hidden');
@@ -663,7 +702,7 @@ function updateMaskRevealUI(){
   }
 }
 function revealOneMask(el){
-  if(!active||!revealInPlace||visible||!el||el.classList.contains('m1-ic-mask-open'))return;
+  if(!active||rendering||importing||grading||!revealInPlace||visible||!el||el.classList.contains('m1-ic-mask-open'))return;
   el.classList.add('m1-ic-mask-open');
   el.setAttribute('aria-pressed','true');
   el.setAttribute('tabindex','-1');
@@ -679,7 +718,7 @@ $('front').addEventListener('keydown',e=>{
   if(mask){e.preventDefault();revealOneMask(mask);}
 });
 $('reveal').addEventListener('click',()=>{
-  if(!active||visible)return;
+  if(!active||visible||rendering||importing||grading)return;
   if(revealInPlace){
     const masks=[...$('front').querySelectorAll('.m1-ic-wrap .m1-ic-mask')];
     if(!masks.length){notice('未找到可揭晓的遮挡矩形，未改变题目状态。');return;}
@@ -692,16 +731,49 @@ $('reveal').addEventListener('click',()=>{
     return;
   }
   $('back').classList.remove('hidden');
-  visible=true;
+  visible=true;updateRatingLabels();updateActions();
   $('reveal-area').classList.add('hidden');
   $('grade').classList.remove('hidden');
 });
-$('m1-prev').addEventListener('click',()=>{if(!session.length)return;index=(index-1+session.length)%session.length;showCurrent()});
-$('m1-next').addEventListener('click',()=>{if(!session.length)return;index=(index+1)%session.length;showCurrent()});
-$('grade').addEventListener('click',e=>{let b=e.target.closest('[data-grade]');if(b)grade(Number(b.dataset.grade))});
+function refresh(){showCurrent().catch(e=>{rendering=false;notice('卡片加载失败：'+e.message);updateActions();});}
+$('m1-prev').addEventListener('click',()=>{if(!session.length||grading||importing)return;index=(index-1+session.length)%session.length;refresh()});
+$('m1-next').addEventListener('click',()=>{if(!session.length||grading||importing)return;index=(index+1)%session.length;refresh()});
+$('grade').addEventListener('click',e=>{const b=e.target.closest('[data-grade]');if(b)grade(Number(b.dataset.grade))});
 $('undo').addEventListener('click',undoLastGrade);
 $('suspend').addEventListener('click',toggleSuspend);
-$('reset').addEventListener('click',()=>{if(!packKey)return notice('请先导入卡包');if(!confirm('确定清除当前卡包的本地复习评分记录吗？'))return;for(let x of rows)localStorage.removeItem(revKey(x.cid));index=0;notice('已清除当前卡包的本地复习记录');showCurrent()});
+$('bury').addEventListener('click',()=>{
+ if(!active||grading||rendering||importing)return;
+ try{saveStudy(Core.bury(study,active.cid,new Date()));notice('此卡已搁置到下个学习日，可在队列区提前恢复');refresh();}
+ catch(e){notice('搁置失败：'+e.message);}
+});
+$('unbury').addEventListener('click',()=>{
+ try{saveStudy(Core.unbury(study,rows,decks,$('deck').value));notice('当前牌组的搁置卡已恢复');refresh();}
+ catch(e){notice('恢复搁置卡失败：'+e.message);}
+});
+$('options-form').addEventListener('submit',e=>{
+ e.preventDefault();
+ if(grading||importing)return;
+ try{
+  saveStudy(Core.configure(study,$('deck').value,{newLimit:Number($('new-limit').value),reviewLimit:Number($('review-limit').value)},Number($('day-start').value)));
+  index=0;notice('本地学习选项已保存');refresh();
+ }catch(error){notice('学习选项未保存：'+error.message);}
+});
+$('reset').addEventListener('click',()=>{
+ if(!packKey)return notice('请先导入卡包');if(grading||importing)return;
+ if(!confirm('确定清除当前卡包的本地评分、历史和每日计数吗？学习选项、暂停和搁置状态将保留。'))return;
+ try{saveStudy(Core.reset(study));index=0;notice('已清除评分和每日计数');refresh();}
+ catch(e){notice('清除失败：'+e.message);}
+});
+window.addEventListener('storage',e=>{
+ if(e.key!==storageKey||!packKey)return;
+ try{study=e.newValue===null?Core.empty():Core.normalize(JSON.parse(e.newValue));storedRaw=e.newValue;loadOptions();notice('已更新另一个页面修改的复习进度');refresh();}
+ catch(error){notice('其他页面的复习数据无法读取：'+error.message);}
+});
+document.addEventListener('keydown',e=>{
+ if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest?.('input,textarea,select,button,[contenteditable="true"]'))return;
+ if(e.key===' '&&active){e.preventDefault();if(visible)grade(3);else $('reveal').click();}
+ else if(visible&&/^[1-4]$/.test(e.key)){e.preventDefault();grade(Number(e.key));}
+});
 window.addEventListener('error',e=>log('浏览器错误：'+e.message));
 })();
 </script></body></html>
