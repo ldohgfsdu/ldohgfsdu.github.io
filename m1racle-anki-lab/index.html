@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover"/>
-<title>M1racle Study · Anki 卡包实验页</title>
+<title>M1racle Study · Anki 卡包实验页 v3.2</title>
 <style>
 :root{font-family:system-ui,-apple-system,"PingFang SC","Microsoft Yahei",sans-serif;color-scheme:light dark;--bg:#f5f7fb;--fg:#152238;--muted:#66758c;--card:#fff;--line:#e1e7ef;--main:#2563eb}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1522;--fg:#e9eff7;--muted:#96a8c0;--card:#1a2637;--line:#334459;--main:#8aafff}}
@@ -36,9 +36,25 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 #front .anki-mask svg,#back .anki-mask svg{width:100%!important;height:100%!important;max-height:none!important}
 .anki-mask-error{font-size:14px;line-height:1.5;padding:12px;color:#9b391b;border:1px solid #df957c;border-radius:8px;background:#fff2ed}
 
+/* Kevin Image Cloze (PDF Guru) —— 依据真实卡包的 Masks 字段自行实现的遮挡层。
+   坐标为 0~1 归一化矩形，用百分比定位，无需卡包 JS / CSS，手机与桌面等比一致。 */
+.m1-ic-wrap{position:relative;display:block;width:100%;max-width:100%;line-height:0;margin:0}
+.m1-ic-wrap>img{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;margin:0!important;object-fit:contain!important}
+.m1-ic-layer{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.m1-ic-layer.m1-ic-revealed{visibility:hidden!important;pointer-events:none!important}
+.m1-ic-mask{position:absolute;background:#ff5656;border-radius:2px;box-sizing:border-box;pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.m1-ic-mask::before{content:"";position:absolute;inset:-3px}
+.m1-ic-mask:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.m1-ic-mask.m1-ic-mask-open{visibility:hidden!important;pointer-events:none!important}
+.m1-ic-source{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px;text-align:left}
+.m1-ic-notes{margin-top:12px;line-height:1.65}
+.m1-ic-header{font-size:20px;font-weight:700;padding:8px 0;line-height:1.4}
+.m1-ic-badge{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted);margin-bottom:10px}
+#m1-nav{margin-top:14px;justify-content:space-between}
+
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v2.9 · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v3.2 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -48,12 +64,12 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 <details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
 </section>
 <section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
-<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details></section>
-<section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、部分以 Question Mask / Answer Mask 保存的图片遮挡卡。<b>原生 Anki Image Occlusion 的复杂 SVG 遮挡及第三方自定义 JS 模板不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
+<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="m1-nav" class="row hidden"><button id="m1-prev">上一张</button><span id="m1-pos" class="stat"></span><button id="m1-next">下一张</button></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details></section>
+<section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、以 Question Mask / Answer Mask 保存的图片遮挡卡，以及 <b>Kevin Image Cloze（PDF Guru）</b> 这类把遮挡矩形存进 Masks 字段的图片挖空卡：正面按归一化坐标还原遮挡层，可点击任意红条逐个原位揭晓，也可点击「显示答案」揭晓所有剩余遮挡；不生成第二张图片，并已移除模板自带导航箭头。<b>Anki 原生 Image Occlusion 的复杂 SVG 遮挡仍不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
 </main>
 <script>
 (function(){
-let SQL,JSZip,fzstd,fsrsModule,scheduler,zip,mediaNames=new Map(),mediaNumber=new Map(),mediaUrls=new Map(),rows=[],models={},decks={},packKey='',dbcache,active=null,session=[],index=0,visible=false;
+let SQL,JSZip,fzstd,fsrsModule,scheduler,zip,mediaNames=new Map(),mediaNumber=new Map(),mediaUrls=new Map(),rows=[],models={},decks={},packKey='',dbcache,active=null,session=[],index=0,visible=false,revealInPlace=false;
 const $=x=>document.getElementById(x);
 const log=(s)=>{$('log').textContent+=(new Date().toLocaleTimeString()+' '+String(s)+'\n');};
 const notice=s=>{$('status').textContent=s;log(s)};
@@ -150,6 +166,15 @@ function clean(html){
   let doc=new DOMParser().parseFromString('<div>'+safeString(html)+'</div>','text/html'),root=doc.body.firstElementChild;
   const bad='script,iframe,object,embed,form,button,input,link,meta,style,foreignObject,video,source';
   root.querySelectorAll(bad).forEach(x=>x.remove());
+  // 真实卡包（Kevin Image Cloze）的模板在 #nav 里放了两个
+  // <img src="__prev.svg" / "__next.svg" style="width:1em">：200x200 的黑色 chevron。
+  // 脚本被清理后 inline style 也一并失效，它们便以原始尺寸撑成讲义下方两个巨大黑箭头。
+  // 这里按媒体文件名从来源移除，而不是继续猜测 CSS 缩放。
+  root.querySelectorAll('#nav,#prev,#next,#debug,.nav_btn,.nav_progress').forEach(x=>x.remove());
+  root.querySelectorAll('img[src]').forEach(img=>{
+    let f=(img.getAttribute('src')||'').replace(/^.*\//,'').toLowerCase();
+    if(/^__(prev|next)\.svg$/.test(f)||/^(prev|next|arrow|chevron|nav)[-_.].*\.svg$/.test(f))img.remove();
+  });
   // Anki's card template sometimes includes SVG navigation controls. Removing
   // Anki's own stylesheet makes their arrow glyphs fill the viewport. Ignore
   // non-content SVG controls here; preserve SVG used for image occlusion masks.
@@ -203,9 +228,17 @@ async function renderHTML(el,text){
     let src=img.getAttribute('src');if(!src)return;
     let name=src.replace(/^.*\//,'');
     try{name=decodeURIComponent(name)}catch{}
-    let url=await mediaURL(name);if(url){img.setAttribute('src',url);img.alt=name;img.addEventListener('click',()=>{if(img.style.maxWidth==='none'){img.style.maxWidth='100%';img.style.width='';}else{img.style.maxWidth='none';img.style.width='auto';}})}else{img.replaceWith(document.createTextNode('[未找到图片：'+name+']'))}
+    let url=await mediaURL(name);if(url){img.setAttribute('src',url);img.alt=name;if(!img.hasAttribute('data-m1-ic'))img.addEventListener('click',()=>{if(img.style.maxWidth==='none'){img.style.maxWidth='100%';img.style.width='';}else{img.style.maxWidth='none';img.style.width='auto';}})}else{img.replaceWith(document.createTextNode('[未找到图片：'+name+']'))}
   }));
   el.replaceChildren(...root.childNodes);
+  // clean() 会删除所有 inline style，遮挡矩形坐标改由 data-* 携带，插入 DOM 后再还原。
+  el.querySelectorAll('.m1-ic-mask').forEach(m=>{
+    const g=k=>parseFloat(m.getAttribute(k)||'0');
+    m.style.left=(g('data-x')*100).toFixed(4)+'%';
+    m.style.top=(g('data-y')*100).toFixed(4)+'%';
+    m.style.width=(g('data-w')*100).toFixed(4)+'%';
+    m.style.height=(g('data-h')*100).toFixed(4)+'%';
+  });
   // Fail closed: on a question card, NEVER expose the underlying answer image
   // if the occlusion mask is missing or did not load.
   if(el.id==='front'){
@@ -325,8 +358,65 @@ function ioImageOnly(field){
   if(!mediaNames.has(name))return '';
   return '<img src="'+escapeHTML(name)+'" alt="图片遮挡媒体">';
 }
+// Kevin Image Cloze（真实卡包实测：字段 ID|Header|Image|Masks|Source|Notes|Mode|Index）
+// Masks 是 JSON：[[[x,y,w,h],...],...]，坐标为 0~1 归一化；Mode=free_guess。
+// 原模板靠内联 JS 在 img.onload 时按像素生成 .overlay；网页会清理全部 <script>，
+// 遮挡层因此永远为空 —— 这就是「正面直接显示完整讲义」的根因。
+// 这里不执行卡包 JS（也不复制其代码），改为按归一化坐标用百分比自行绘制遮挡层：
+// 正面盖住全部矩形，答案面显示无遮挡原图，与 AnkiDroid 上 free_guess 的显示一致。
+function kevinClozeSides(m,f){
+  const names=(m.flds||[]).map(x=>String(x?.name||'').toLowerCase());
+  const ix=n=>names.indexOf(n);
+  const iImg=ix('image'),iMasks=ix('masks'),iMode=ix('mode'),
+        iHeader=ix('header'),iSource=ix('source'),iNotes=ix('notes');
+  const isKevin=/kevin image cloze/i.test(String(m.name||''))
+    ||(iMasks>=0&&iImg>=0&&iMode>=0);
+  if(!isKevin||iImg<0||iMasks<0)return null;
+  const fail=(why)=>({
+    front:'<div class="anki-mask-error">'+why+' 已隐藏原图以避免提前泄露答案。</div>',
+    back:'<div class="anki-mask-error">'+why+'</div>',
+    mode:'Kevin Image Cloze（'+why+'）'
+  });
+  // 图片名只允许来自媒体索引，杜绝任意路径 / 外链
+  const raw=String(f[iImg]||'');
+  const d=new DOMParser().parseFromString('<div>'+raw+'</div>','text/html');
+  const im=d.querySelector('img[src]');
+  let imgName=(im?im.getAttribute('src'):raw.trim()).replace(/^.*\//,'');
+  try{imgName=decodeURIComponent(imgName)}catch{}
+  if(!mediaNames.has(imgName))return fail('未找到题目图片媒体');
+  // 解析归一化矩形；任何异常都 fail-closed，绝不回退到「显示无遮挡原图」
+  let groups=null;
+  try{groups=JSON.parse(String(f[iMasks]||''))}catch{}
+  if(!Array.isArray(groups))return fail('遮挡数据 Masks 不是合法 JSON');
+  const rects=[];
+  for(const g of groups){
+    if(!Array.isArray(g))continue;
+    for(const r of g){
+      if(!Array.isArray(r)||r.length<4)continue;
+      const v=r.slice(0,4).map(Number);
+      if(v.every(Number.isFinite)&&v[2]>0&&v[3]>0&&v[0]>=0&&v[1]>=0&&v[0]+v[2]<=1.001&&v[1]+v[3]<=1.001)rects.push(v);
+    }
+  }
+  if(!rects.length)return fail('遮挡数据 Masks 无有效矩形');
+  const mode=String(f[iMode]||'').trim()||'free_guess';
+  const header=String(f[iHeader]||''),source=String(f[iSource]||''),notes=String(f[iNotes]||'');
+  const esc=v=>Number(v).toFixed(6);
+  const masks=rects.map((r,i)=>'<div class="m1-ic-mask" role="button" tabindex="0" aria-label="点击揭晓第 '+(i+1)+' 处" aria-pressed="false" data-mask-index="'+i+'" data-x="'+esc(r[0])+'" data-y="'+esc(r[1])+'" data-w="'+esc(r[2])+'" data-h="'+esc(r[3])+'"></div>').join('');
+  const img='<img data-m1-ic="1" src="'+escapeHTML(imgName)+'" alt="题目图片">';
+  const badge='<div class="m1-ic-badge" aria-live="polite">图片遮挡题 · '+rects.length+' 处待回忆 · 点红条逐个揭晓</div>';
+  const front=(header?'<div class="m1-ic-header">'+header+'</div>':'')
+    +badge+'<div class="m1-ic-wrap">'+img+'<div class="m1-ic-layer">'+masks+'</div></div>'
+    +(source?'<div class="m1-ic-source">'+source+'</div>':'');
+  // 对此卡型，不再渲染第二张无遮拦图片；揭晓只隐藏 front 内的遮挡图层。
+  // 如有附注，在已有正面下方原位显示，不改变图片 DOM 与坐标。
+  const back='';
+  const answerNotes=notes?'<div class="m1-ic-notes">'+notes+'</div>':'';
+  return {front,back,answerNotes,revealInPlace:true,mode:'Kevin Image Cloze（'+mode+' · '+rects.length+' 处遮挡）'};
+}
 function sides(item){
   const m=models[String(item.mid)]||{},f=item.fields||[],name=String(m.name||'').toLowerCase();
+  const kevin=kevinClozeSides(m,f);
+  if(kevin)return kevin;
   const tpl=m.tmpls?.[item.ord]||m.tmpls?.[0];
   const ioEnhanced=/image occlusion enhanced|图像遮挡增强/i.test(name)
     ||/id=["']io-(wrapper|overlay|original)["']/i.test(tpl?.qfmt||'')
@@ -382,9 +472,10 @@ async function showCurrent(){
   const item=session[index];
   $('review').classList.toggle('hidden',!item);
   if(!item){if(rows.length)notice('本次筛选范围没有待复习卡片，可切换为“全部卡片”。');return;}
-  active=item;visible=false;
+  active=item;visible=false;revealInPlace=false;
   $('reveal-area').classList.remove('hidden');$('grade').classList.add('hidden');$('back').classList.add('hidden');
   const s=sides(item);
+  revealInPlace=!!s.revealInPlace;
   const model=models[String(item.mid)]||{};
   const record=(item.fields||[]).map((value,i)=>{
     const name=model.flds?.[i]?.name||('字段'+(i+1));
@@ -394,7 +485,20 @@ async function showCurrent(){
   });
   $('card-debug').textContent='笔记类型：'+(model.name||item.mid)+'\n显示方式：'+s.mode+'\n字段：\n'+record.join('\n')+'\n模板数量：'+(model.tmpls?.length||0);
   $('head').innerHTML='<span class="tag">'+escapeHTML(decks[String(item.did)]||'牌组')+'</span><span class="stat">'+(index+1)+' / '+session.length+' · '+escapeHTML(s.mode)+'</span>';
-  await renderHTML($('front'),s.front);await renderHTML($('back'),s.back);
+  $('m1-pos').textContent='第 '+(index+1)+' / '+session.length+' 张';
+  $('m1-nav').classList.remove('hidden');
+  await renderHTML($('front'),s.front);
+  if(revealInPlace)updateMaskRevealUI();
+  else $('reveal').textContent='显示答案';
+  if(revealInPlace){
+    // Prepare optional notes without a second copy of the original image.
+    $('back').replaceChildren();
+    if(s.answerNotes){
+      await renderHTML($('back'),s.answerNotes);
+    }
+  }else{
+    await renderHTML($('back'),s.back);
+  }
 }
 async function grade(value){
   if(!active||!visible)return;
@@ -448,7 +552,69 @@ $('file').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)
 $('restore').addEventListener('click',async()=>{try{await importFile(await restoreFile(),false)}catch(e){notice('恢复失败：'+e.message)}});
 $('deck').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
 $('scope').addEventListener('change',()=>{index=0;showCurrent().catch(e=>notice(e.message))});
-$('reveal').addEventListener('click',()=>{visible=true;$('back').classList.remove('hidden');$('reveal-area').classList.add('hidden');$('grade').classList.remove('hidden')});
+// Kevin Image Cloze: both interaction modes mutate only the existing overlay.
+// Individual clicks uncover one region, while the main button uncovers all remaining regions.
+function updateMaskRevealUI(){
+  if(!revealInPlace)return;
+  const front=$('front');
+  const masks=[...front.querySelectorAll('.m1-ic-wrap .m1-ic-mask')];
+  if(!masks.length)return;
+  const revealed=masks.filter(m=>m.classList.contains('m1-ic-mask-open')).length;
+  const left=masks.length-revealed;
+  const badge=front.querySelector('.m1-ic-badge');
+  if(badge)badge.textContent=left
+    ?'已揭晓 '+revealed+' / '+masks.length+' 处 · 点击红条可单独揭晓'
+    :'已全部揭晓 · 原图和缩放保持不变';
+  if(left){
+    visible=false;
+    $('reveal').textContent='显示答案 · 揭晓剩余 '+left+' 处';
+    $('reveal-area').classList.remove('hidden');
+    $('grade').classList.add('hidden');
+    $('back').classList.add('hidden');
+  }else{
+    visible=true;
+    $('reveal-area').classList.add('hidden');
+    $('grade').classList.remove('hidden');
+    if($('back').children.length)$('back').classList.remove('hidden');
+    else $('back').classList.add('hidden');
+  }
+}
+function revealOneMask(el){
+  if(!active||!revealInPlace||visible||!el||el.classList.contains('m1-ic-mask-open'))return;
+  el.classList.add('m1-ic-mask-open');
+  el.setAttribute('aria-pressed','true');
+  el.setAttribute('tabindex','-1');
+  updateMaskRevealUI();
+}
+$('front').addEventListener('click',e=>{
+  const mask=e.target.closest?.('.m1-ic-mask');
+  if(mask)revealOneMask(mask);
+});
+$('front').addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const mask=e.target.closest?.('.m1-ic-mask');
+  if(mask){e.preventDefault();revealOneMask(mask);}
+});
+$('reveal').addEventListener('click',()=>{
+  if(!active||visible)return;
+  if(revealInPlace){
+    const masks=[...$('front').querySelectorAll('.m1-ic-wrap .m1-ic-mask')];
+    if(!masks.length){notice('未找到可揭晓的遮挡矩形，未改变题目状态。');return;}
+    for(const mask of masks){
+      mask.classList.add('m1-ic-mask-open');
+      mask.setAttribute('aria-pressed','true');
+      mask.setAttribute('tabindex','-1');
+    }
+    updateMaskRevealUI();
+    return;
+  }
+  $('back').classList.remove('hidden');
+  visible=true;
+  $('reveal-area').classList.add('hidden');
+  $('grade').classList.remove('hidden');
+});
+$('m1-prev').addEventListener('click',()=>{if(!session.length)return;index=(index-1+session.length)%session.length;showCurrent()});
+$('m1-next').addEventListener('click',()=>{if(!session.length)return;index=(index+1)%session.length;showCurrent()});
 $('grade').addEventListener('click',e=>{let b=e.target.closest('[data-grade]');if(b)grade(Number(b.dataset.grade))});
 $('reset').addEventListener('click',()=>{if(!packKey)return notice('请先导入卡包');if(!confirm('确定清除当前卡包的本地复习评分记录吗？'))return;for(let x of rows)localStorage.removeItem(revKey(x.cid));index=0;notice('已清除当前卡包的本地复习记录');showCurrent()});
 window.addEventListener('error',e=>log('浏览器错误：'+e.message));
