@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="description" content="M1racle Study 医学学习工作台：录播课程、体格检查、刷题、思维导图与 Anki 复习。"/>
+<meta name="theme-color" content="#ffffff"/>
+<title>M1racle Study · 医学学习工作台</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="icon.png"/><link rel="manifest" href="manifest.webmanifest"/>
+<link rel="stylesheet" href="assets/style.css"/>
+<script defer src="assets/cloud-config.js"></script><script defer src="assets/cloud-sync.js"></script>
+<script defer src="assets/data.js"></script><script defer src="assets/course-progress.js"></script><script defer src="assets/anki-workspace.js"></script><script defer src="assets/app.js"></script>
+</head><body>
+<div class="app">
+ <aside class="sidebar" aria-label="平台主导航">
+  <a href="#/home" class="brand" aria-label="M1racle Study 首页"><img src="brand-mark.png" alt="m1racle 母标"/><strong>Study</strong></a>
+  
+  <nav class="side-nav">
+   <button type="button" data-view="home" class="side-link">学习首页</button>
+   <a class="side-link" href="physical/">体格检查</a>
+   <button type="button" data-view="courses" class="side-link">录播课程</button>
+   <button type="button" data-view="anki" class="side-link">Anki复习</button>
+   <button type="button" data-view="questions" class="side-link">刷题中心</button>
+   <button type="button" data-view="mindmaps" class="side-link">思维导图</button>
+   <a class="side-link" href="account/">账号与同步</a>
+  </nav>
+  <div class="side-bottom"><p>登录后可跨设备同步；未登录时保存在本机。</p></div>
+ </aside>
+ <div class="main-wrap">
+  <header class="topbar">
+   <a class="mobile-brand" href="#/home"><img src="brand-mark.png" alt="m1racle 母标"/><strong>Study</strong></a>
+   <span class="crumb" id="crumb" aria-hidden="true"></span>
+   <div class="top-right"><a class="sync-indicator" id="cloud-status" href="account/">未连接</a><button id="data-button" type="button" title="导出刷题记录" aria-label="导出刷题记录">导出</button></div>
+  </header>
+  <main id="workspace-main"><div id="app-main" tabindex="-1"></div><section id="anki-workspace" class="main-content" aria-labelledby="anki-heading" hidden></section></main>
+  <footer class="footer">M1racle Study · v10。教材目录用于知识定位；Anki 记录保存在本机，其他学习记录登录后可同步。</footer>
+ </div>
+</div>
+<nav class="mobile-nav" aria-label="移动端导航"><button data-view="home">首页</button><button data-view="courses">课程</button><a href="physical/">体格</a><button data-view="anki">复习</button><button data-view="questions">刷题</button><button data-view="mindmaps">导图</button><a href="account/">账号</a></nav>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body></html>

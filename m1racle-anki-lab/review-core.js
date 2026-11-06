@@ -144,5 +144,30 @@
     }).filter(t=>Number.isFinite(t)&&t>+new Date(now));
     return Math.min(nextBoundary(now,state.dayStart),...times);
   }
-  return {empty,normalize,dayKey,nextBoundary,matches,classify,isBuried,dueTime,due,budgetKind,settings,used,sort,selectQueue,counts,grade,undo,suspend,bury,unbury,configure,reset,nextWake};
+  function restoreBackup(data,hash,rows,decks){
+    if(data?.format!=='m1racle-anki-progress-v1'||data.packageHash!==hash)throw new Error('备份不属于当前卡包，请先导入相同的 APKG 文件');
+    const next=normalize(clone(data.state)),ids=new Set(rows.map(row=>String(row.cid))),deckIds=new Set([...Object.keys(decks),...rows.map(row=>String(row.did))]);
+    const validDate=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
+    for(const [cid,record] of Object.entries(next.records)){
+      if(!ids.has(cid)||!record?.card||!validDate(record.card.due)||!Number.isInteger(record.card.state)||record.card.state<0||record.card.state>3)throw new Error('备份中的卡片记录无效');
+      for(const key of ['stability','difficulty','reps','lapses','elapsed_days','scheduled_days'])if(!Number.isFinite(record.card[key])||record.card[key]<0)throw new Error('备份中的调度参数无效');
+      if(record.reviewedAt&&!validDate(record.reviewedAt))throw new Error('备份中的复习时间无效');
+      if(record.card.last_review&&!validDate(record.card.last_review))throw new Error('备份中的复习时间无效');
+      if(!Array.isArray(record.history||[])||(record.history||[]).length>200)throw new Error('备份中的评分历史无效');
+      for(const event of record.history||[])if(!validDate(event.at)||!validDate(event.due)||!Number.isInteger(event.rating)||event.rating<1||event.rating>4)throw new Error('备份中的评分历史无效');
+    }
+    for(const [cid,value] of Object.entries(next.suspended))if(!ids.has(cid)||typeof value!=='boolean')throw new Error('备份中的暂停状态无效');
+    for(const [cid,value] of Object.entries(next.buried))if(!ids.has(cid)||!Number.isFinite(value)||value<0)throw new Error('备份中的搁置状态无效');
+    for(const [did,options] of Object.entries(next.options)){
+      if(did!=='all'&&!deckIds.has(did))throw new Error('备份中的牌组无效');
+      configure(next,did,options,next.dayStart);
+    }
+    for(const [day,dayUsage] of Object.entries(next.usage)){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!dayUsage||typeof dayUsage!=='object'||Array.isArray(dayUsage))throw new Error('备份中的每日计数无效');
+      for(const [did,counts] of Object.entries(dayUsage))if(!deckIds.has(did)||!counts||!['new','review'].every(key=>Number.isInteger(counts[key])&&counts[key]>=0))throw new Error('备份中的每日计数无效');
+    }
+    // Import starts a new action history; an old undo snapshot cannot undo the import.
+    next.undo=null;return next;
+  }
+  return {empty,normalize,dayKey,nextBoundary,matches,classify,isBuried,dueTime,due,budgetKind,settings,used,sort,selectQueue,counts,grade,undo,suspend,bury,unbury,configure,reset,nextWake,restoreBackup};
 });

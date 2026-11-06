@@ -1,0 +1,986 @@
+{
+  "version": "2026.11",
+  "sourceType": "由既有体格检查考点整理的自编练习题，并非教材原题",
+  "categories": [
+    {
+      "id": "general",
+      "name": "一般检查",
+      "short": "一般",
+      "count": 11,
+      "range": "01–11",
+      "blurb": "生命体征、测量、皮肤及浅表淋巴结",
+      "color": "#5A7EC8"
+    },
+    {
+      "id": "head",
+      "name": "头颈部检查",
+      "short": "头颈",
+      "count": 7,
+      "range": "12–18",
+      "blurb": "眼部、扁桃体、甲状腺与颈部血管",
+      "color": "#8E67B9"
+    },
+    {
+      "id": "thorax",
+      "name": "胸部检查",
+      "short": "胸部",
+      "count": 16,
+      "range": "19–34",
+      "blurb": "胸肺、乳房、心脏、周围血管征",
+      "color": "#2D9992"
+    },
+    {
+      "id": "abdomen",
+      "name": "腹部检查",
+      "short": "腹部",
+      "count": 17,
+      "range": "35–51",
+      "blurb": "腹部视触叩听、特殊体征与血管杂音",
+      "color": "#C48648"
+    },
+    {
+      "id": "limbs",
+      "name": "脊柱、四肢及肛门",
+      "short": "脊柱四肢",
+      "count": 7,
+      "range": "52–58",
+      "blurb": "脊柱、关节、肌腱、肛门指诊",
+      "color": "#A56F7A"
+    },
+    {
+      "id": "neuro",
+      "name": "神经反射",
+      "short": "神经",
+      "count": 8,
+      "range": "59–66",
+      "blurb": "浅反射、深反射、病理征与脑膜刺激征",
+      "color": "#6A8B52"
+    }
+  ],
+  "questions": [
+    {
+      "item": 1,
+      "q": "原书腋测体温时，体温计需要夹在腋下多久？",
+      "options": [
+        "3分钟",
+        "5分钟",
+        "10分钟",
+        "15分钟"
+      ],
+      "answer": 2,
+      "why": "原书第85—86页明确记“10分钟后读数”。",
+      "id": "phys-001",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 85,
+        "pageEnd": 86,
+        "pdfPageStart": 92,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 4,
+      "q": "测量血压时，袖带绑在肘关节上方约多远？",
+      "options": [
+        "0.5cm",
+        "2～3cm",
+        "5～6cm",
+        "10cm"
+      ],
+      "answer": 1,
+      "why": "原书第86页记袖带距肘关节上方2～3cm。",
+      "id": "phys-002",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 86,
+        "pageEnd": 86,
+        "pdfPageStart": 93,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 4,
+      "q": "原书血压测量中，搏动音消失后继续升高约多少压力？",
+      "options": [
+        "5～10mmHg",
+        "20～30mmHg",
+        "40～60mmHg",
+        "80mmHg"
+      ],
+      "answer": 1,
+      "why": "原书第86页记20～30mmHg。",
+      "id": "phys-003",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 86,
+        "pageEnd": 86,
+        "pdfPageStart": 93,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 3,
+      "q": "原书呼吸频率计数时长为：",
+      "options": [
+        "15秒",
+        "30秒",
+        "1分钟",
+        "2分钟"
+      ],
+      "answer": 2,
+      "why": "原书第86页记计数1分钟。",
+      "id": "phys-004",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 86,
+        "pageEnd": 86,
+        "pdfPageStart": 93,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 8,
+      "q": "原书头围测量时经过哪组标志？",
+      "options": [
+        "耳垂与下颌角",
+        "眉弓上缘和枕骨粗隆",
+        "鼻尖和后枕部",
+        "眉间与乳突"
+      ],
+      "answer": 1,
+      "why": "原书第86页写眉弓上缘→枕骨粗隆。",
+      "id": "phys-005",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 86,
+        "pageEnd": 86,
+        "pdfPageStart": 93,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 10,
+      "q": "按原书分类，直径大于5mm的皮肤出血称：",
+      "options": [
+        "瘀点",
+        "紫癜",
+        "瘀斑",
+        "蜘蛛痣"
+      ],
+      "answer": 2,
+      "why": "原书第86页记瘀斑＞5mm。",
+      "id": "phys-006",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 86,
+        "pageEnd": 86,
+        "pdfPageStart": 93,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 11,
+      "q": "原书颈部淋巴结触诊顺序以哪个部位起始？",
+      "options": [
+        "锁骨上",
+        "耳前",
+        "颌下",
+        "颈后"
+      ],
+      "answer": 1,
+      "why": "原书第86页从耳前开始。",
+      "id": "phys-007",
+      "cat": "general",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 86,
+        "pageEnd": 86,
+        "pdfPageStart": 93,
+        "pdfPageEnd": 93
+      },
+      "type": "single"
+    },
+    {
+      "item": 13,
+      "q": "原书眼球运动检查距离患者约：",
+      "options": [
+        "5～10cm",
+        "15～20cm",
+        "30～40cm",
+        "60cm"
+      ],
+      "answer": 2,
+      "why": "原书第87页给30～40cm。",
+      "id": "phys-008",
+      "cat": "head",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 87,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 94
+      },
+      "type": "single"
+    },
+    {
+      "item": 14,
+      "q": "原书正常瞳孔直径记为：",
+      "options": [
+        "1～2mm",
+        "3～4mm",
+        "5～6mm",
+        "7～8mm"
+      ],
+      "answer": 1,
+      "why": "原书第87页记3～4mm。",
+      "id": "phys-009",
+      "cat": "head",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 87,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 94
+      },
+      "type": "single"
+    },
+    {
+      "item": 15,
+      "q": "照射一侧瞳孔，同时观察另一侧缩小，这检查的是：",
+      "options": [
+        "直接对光反射",
+        "间接对光反射",
+        "角膜反射",
+        "腹壁反射"
+      ],
+      "answer": 1,
+      "why": "原书第87页把同侧和对侧分别列出。",
+      "id": "phys-010",
+      "cat": "head",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 87,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 94
+      },
+      "type": "single"
+    },
+    {
+      "item": 17,
+      "q": "原书甲状腺侧叶检查口诀为：",
+      "options": [
+        "一推二钩三摸四吞咽",
+        "一听二视三触四叩",
+        "一看二压三翻四听",
+        "一视二叩三听四触"
+      ],
+      "answer": 0,
+      "why": "原书第87页原有口诀。",
+      "id": "phys-011",
+      "cat": "head",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 87,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 94
+      },
+      "type": "single"
+    },
+    {
+      "item": 19,
+      "q": "原书胸部体表标志记为：",
+      "options": [
+        "4窝3角4区9线",
+        "3窝4角9区4线",
+        "4窝4角3区9线",
+        "9窝3角4区4线"
+      ],
+      "answer": 0,
+      "why": "原书第87页给4窝、3角、4区、9线。",
+      "id": "phys-012",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 87,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 94
+      },
+      "type": "single"
+    },
+    {
+      "item": 23,
+      "q": "“语音震颤”和“语音共振”的正确对应是：",
+      "options": [
+        "都用听诊器",
+        "震颤用触诊，共振用听诊",
+        "震颤用叩诊，共振用触诊",
+        "都用叩诊"
+      ],
+      "answer": 1,
+      "why": "原书第87页明确提醒不要混淆。",
+      "id": "phys-013",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 87,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 94
+      },
+      "type": "single"
+    },
+    {
+      "item": 24,
+      "q": "原书肺上界叩诊正常宽度记为：",
+      "options": [
+        "约1cm",
+        "约3cm",
+        "约5cm",
+        "约10cm"
+      ],
+      "answer": 2,
+      "why": "原书第87—88页记5cm。",
+      "id": "phys-014",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 87,
+        "pageEnd": 88,
+        "pdfPageStart": 94,
+        "pdfPageEnd": 95
+      },
+      "type": "single"
+    },
+    {
+      "item": 25,
+      "q": "右锁骨中线肺下界原书记第几肋？",
+      "options": [
+        "第4肋",
+        "第6肋",
+        "第8肋",
+        "第10肋"
+      ],
+      "answer": 1,
+      "why": "原书第88页给右锁骨中线第6肋。",
+      "id": "phys-015",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 88,
+        "pageEnd": 88,
+        "pdfPageStart": 95,
+        "pdfPageEnd": 95
+      },
+      "type": "single"
+    },
+    {
+      "item": 26,
+      "q": "原书肺下界移动度正常值：",
+      "options": [
+        "1～2cm",
+        "3～4cm",
+        "6～8cm",
+        "10～12cm"
+      ],
+      "answer": 2,
+      "why": "原书第88页记6～8cm。",
+      "id": "phys-016",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 88,
+        "pageEnd": 88,
+        "pdfPageStart": 95,
+        "pdfPageEnd": 95
+      },
+      "type": "single"
+    },
+    {
+      "item": 28,
+      "q": "原书乳房触诊左侧的方向是：",
+      "options": [
+        "顺时针",
+        "逆时针",
+        "先横后竖",
+        "无固定方向"
+      ],
+      "answer": 0,
+      "why": "原书第88页“左侧顺时针，右侧逆时针”。",
+      "id": "phys-017",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 88,
+        "pageEnd": 88,
+        "pdfPageStart": 95,
+        "pdfPageEnd": 95
+      },
+      "type": "single"
+    },
+    {
+      "item": 31,
+      "q": "原书心脏叩诊的顺序是：",
+      "options": [
+        "先右后左，由上到下",
+        "先左后右，自下而上，从外向内",
+        "先中心后外周",
+        "仅叩心尖"
+      ],
+      "answer": 1,
+      "why": "原书第88页原有顺序。",
+      "id": "phys-018",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 88,
+        "pageEnd": 88,
+        "pdfPageStart": 95,
+        "pdfPageEnd": 95
+      },
+      "type": "single"
+    },
+    {
+      "item": 31,
+      "q": "原书心浊音界标记为：",
+      "options": [
+        "3点1线",
+        "5点2线",
+        "7点2线",
+        "9点3线"
+      ],
+      "answer": 2,
+      "why": "原书第88页记7点、2条线。",
+      "id": "phys-019",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 88,
+        "pageEnd": 88,
+        "pdfPageStart": 95,
+        "pdfPageEnd": 95
+      },
+      "type": "single"
+    },
+    {
+      "item": 34,
+      "q": "周围血管征在本书中归纳为几项？",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "6"
+      ],
+      "answer": 2,
+      "why": "原书第89页记4个。",
+      "id": "phys-020",
+      "cat": "thorax",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 35,
+      "q": "九区分法的垂直分界线，原书特别提示“不是”：",
+      "options": [
+        "腹中线",
+        "锁骨中线延长线",
+        "髂前上棘",
+        "腹股沟韧带"
+      ],
+      "answer": 1,
+      "why": "原书第89页专门强调此混淆点。",
+      "id": "phys-021",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 36,
+      "q": "原书腹部视诊先后顺序：",
+      "options": [
+        "先俯视再水平位",
+        "先水平位再俯视",
+        "先触诊再视诊",
+        "先侧卧再仰卧"
+      ],
+      "answer": 0,
+      "why": "原书第89页记腹部与心脏相反。",
+      "id": "phys-022",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 38,
+      "q": "腹壁静脉血流方向判断时，原书强调：",
+      "options": [
+        "双手指同时松开",
+        "两指不能同时动",
+        "持续用力按压",
+        "无须观察充盈"
+      ],
+      "answer": 1,
+      "why": "原书第89页提示两个手指不能同时动。",
+      "id": "phys-023",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 39,
+      "q": "原书腹部浅触诊深度记为：",
+      "options": [
+        "约1cm",
+        "约2cm",
+        "约4cm",
+        "约8cm"
+      ],
+      "answer": 0,
+      "why": "原书第89页记1cm。",
+      "id": "phys-024",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 40,
+      "q": "原书腹部包块深触诊深度记为：",
+      "options": [
+        "约0.5cm",
+        "约1cm",
+        "约2cm",
+        "约5cm"
+      ],
+      "answer": 2,
+      "why": "原书第89页记2cm。",
+      "id": "phys-025",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 42,
+      "q": "原书胆囊触诊定位点是：",
+      "options": [
+        "左锁骨中线与左肋弓交点",
+        "右锁骨中线与右肋弓交点",
+        "脐正中",
+        "剑突正下"
+      ],
+      "answer": 1,
+      "why": "原书第89页写右锁骨中线与右肋弓交点。",
+      "id": "phys-026",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 44,
+      "q": "原书液波震颤检查时采用：",
+      "options": [
+        "手掌拍",
+        "四指冲击",
+        "手背扫",
+        "仅轻按"
+      ],
+      "answer": 1,
+      "why": "原书第89页特别提示四指冲击。",
+      "id": "phys-027",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 89,
+        "pageEnd": 89,
+        "pdfPageStart": 96,
+        "pdfPageEnd": 96
+      },
+      "type": "single"
+    },
+    {
+      "item": 46,
+      "q": "肝上界叩诊音变化，原书表述：",
+      "options": [
+        "鼓音→清音",
+        "清音→浊音",
+        "实音→鼓音",
+        "浊音→清音"
+      ],
+      "answer": 1,
+      "why": "原书第90页记清音→浊音。",
+      "id": "phys-028",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 90,
+        "pageEnd": 90,
+        "pdfPageStart": 97,
+        "pdfPageEnd": 97
+      },
+      "type": "single"
+    },
+    {
+      "item": 48,
+      "q": "肋脊角叩击痛检查连续叩击：",
+      "options": [
+        "1次",
+        "2～3次",
+        "10次",
+        "30次"
+      ],
+      "answer": 1,
+      "why": "原书第90页记2～3次。",
+      "id": "phys-029",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 90,
+        "pageEnd": 90,
+        "pdfPageStart": 97,
+        "pdfPageEnd": 97
+      },
+      "type": "single"
+    },
+    {
+      "item": 50,
+      "q": "原书腹部听诊总时长至少：",
+      "options": [
+        "10秒",
+        "30秒",
+        "1分钟",
+        "5分钟"
+      ],
+      "answer": 2,
+      "why": "原书第90页特别强调总共听1分钟，不是每部位1分钟。",
+      "id": "phys-030",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 90,
+        "pageEnd": 90,
+        "pdfPageStart": 97,
+        "pdfPageEnd": 97
+      },
+      "type": "single"
+    },
+    {
+      "item": 50,
+      "q": "原书肠鸣音正常值记为：",
+      "options": [
+        "0次/分钟",
+        "3～5次/分钟",
+        "10～15次/分钟",
+        "20次/分钟"
+      ],
+      "answer": 1,
+      "why": "原书第90页记3～5次/分钟。",
+      "id": "phys-031",
+      "cat": "abdomen",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 90,
+        "pageEnd": 90,
+        "pdfPageStart": 97,
+        "pdfPageEnd": 97
+      },
+      "type": "single"
+    },
+    {
+      "item": 52,
+      "q": "脊柱检查原书的动作顺序是：",
+      "options": [
+        "听视触叩",
+        "视触叩动",
+        "触听视动",
+        "视叩听触"
+      ],
+      "answer": 1,
+      "why": "原书第90页记视→触→叩→动。",
+      "id": "phys-032",
+      "cat": "limbs",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 90,
+        "pageEnd": 90,
+        "pdfPageStart": 97,
+        "pdfPageEnd": 97
+      },
+      "type": "single"
+    },
+    {
+      "item": 56,
+      "q": "原书记膝关节活动范围约：",
+      "options": [
+        "0°～30°",
+        "0°～60°",
+        "0°～90°",
+        "0°～130°"
+      ],
+      "answer": 3,
+      "why": "原书第91页记0°～130°。",
+      "id": "phys-033",
+      "cat": "limbs",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 91,
+        "pageEnd": 91,
+        "pdfPageStart": 98,
+        "pdfPageEnd": 98
+      },
+      "type": "single"
+    },
+    {
+      "item": 57,
+      "q": "原书将明显浮髌感对应的积液量记为：",
+      "options": [
+        "＞10mL",
+        "＞20mL",
+        "＞50mL",
+        "＞200mL"
+      ],
+      "answer": 2,
+      "why": "原书第91页提示＞50mL。",
+      "id": "phys-034",
+      "cat": "limbs",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 91,
+        "pageEnd": 91,
+        "pdfPageStart": 98,
+        "pdfPageEnd": 98
+      },
+      "type": "single"
+    },
+    {
+      "item": 58,
+      "q": "肛门指诊原书六字顺序正确的是：",
+      "options": [
+        "放插夹转拔看",
+        "看拔转夹插放",
+        "插看转放拔夹",
+        "放夹插看转拔"
+      ],
+      "answer": 0,
+      "why": "原书第91页“放→插→夹→转→拔→看”。",
+      "id": "phys-035",
+      "cat": "limbs",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 91,
+        "pageEnd": 91,
+        "pdfPageStart": 98,
+        "pdfPageEnd": 98
+      },
+      "type": "single"
+    },
+    {
+      "item": 59,
+      "q": "原书中腹壁反射对应的节段是：",
+      "options": [
+        "T5～T6",
+        "T7～T8",
+        "T9～T10",
+        "T11～T12"
+      ],
+      "answer": 2,
+      "why": "原书第91页标记9、10。",
+      "id": "phys-036",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 91,
+        "pageEnd": 91,
+        "pdfPageStart": 98,
+        "pdfPageEnd": 98
+      },
+      "type": "single"
+    },
+    {
+      "item": 60,
+      "q": "肱二头肌反射定位：",
+      "options": [
+        "C3～C4",
+        "C5～C6",
+        "C7～C8",
+        "T1～T2"
+      ],
+      "answer": 1,
+      "why": "原书第91—92页记C5～C6。",
+      "id": "phys-037",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 91,
+        "pageEnd": 92,
+        "pdfPageStart": 98,
+        "pdfPageEnd": 99
+      },
+      "type": "single"
+    },
+    {
+      "item": 61,
+      "q": "肱三头肌反射定位：",
+      "options": [
+        "C3～C4",
+        "C4～C5",
+        "C6～C7",
+        "L4"
+      ],
+      "answer": 2,
+      "why": "原书第92页记C6～C7。",
+      "id": "phys-038",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 92,
+        "pageEnd": 92,
+        "pdfPageStart": 99,
+        "pdfPageEnd": 99
+      },
+      "type": "single"
+    },
+    {
+      "item": 63,
+      "q": "膝反射原书记对应：",
+      "options": [
+        "C5",
+        "T10",
+        "L4",
+        "S2"
+      ],
+      "answer": 2,
+      "why": "原书第92页记L4神经根。",
+      "id": "phys-039",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 92,
+        "pageEnd": 92,
+        "pdfPageStart": 99,
+        "pdfPageEnd": 99
+      },
+      "type": "single"
+    },
+    {
+      "item": 64,
+      "q": "跟腱反射正常动作，原书记为：",
+      "options": [
+        "踝关节背屈",
+        "踝关节跖屈",
+        "膝关节伸展",
+        "肘关节屈曲"
+      ],
+      "answer": 1,
+      "why": "原书第92页记踝关节跖屈。",
+      "id": "phys-040",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 92,
+        "pageEnd": 92,
+        "pdfPageStart": 99,
+        "pdfPageEnd": 99
+      },
+      "type": "single"
+    },
+    {
+      "item": 65,
+      "q": "哪项不是原书列出的四种病理征？",
+      "options": [
+        "Babinski征",
+        "Oppenheim征",
+        "Gordon征",
+        "Kernig征"
+      ],
+      "answer": 3,
+      "why": "Kernig（克氏）征在原书归到脑膜刺激征。",
+      "id": "phys-041",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 92,
+        "pageEnd": 92,
+        "pdfPageStart": 99,
+        "pdfPageEnd": 99
+      },
+      "type": "single"
+    },
+    {
+      "item": 66,
+      "q": "原书脑膜刺激征列出了以下哪项？",
+      "options": [
+        "克氏征",
+        "毛细血管搏动征",
+        "浮髌试验",
+        "振水音"
+      ],
+      "answer": 0,
+      "why": "原书第92页列颈强直、克氏征、布氏征。",
+      "id": "phys-042",
+      "cat": "neuro",
+      "source": {
+        "title": "2025昭昭实践技能操作核心考点背诵版",
+        "pageStart": 92,
+        "pageEnd": 92,
+        "pdfPageStart": 99,
+        "pdfPageEnd": 99
+      },
+      "type": "single"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#fff">
+<title>账号与同步 — M1racle Study</title>
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+.account-wrap{max-width:760px;margin:0 auto;padding:36px 20px 80px}
+.account-head{display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:.5px solid #d7dcdf;padding-bottom:18px}
+.account-brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700}.account-brand img{width:44px;height:29px;object-fit:contain}
+.account-head a:not(.account-brand){font-size:14px;color:#626b6f}
+h1{margin:34px 0 8px;font-size:28px}h2{font-size:18px;margin:26px 0 12px}p{font-size:14px;color:#626b6f;line-height:1.75}
+.account-form{max-width:420px;margin-top:25px}.account-field{display:grid;gap:7px;margin:14px 0}.account-field label{font-size:14px;font-weight:600}
+.account-field input{width:100%;border:.5px solid #d7dcdf;border-radius:8px;background:#f6f7f7;padding:11px 13px;min-height:44px;font-size:14px}
+.account-action{padding:10px 16px;min-height:42px;border:0;border-radius:8px;background:#202729;color:#fff;font-weight:600;font-size:14px}
+.account-action.secondary{background:#f0f1f2;color:#202729}.account-action:disabled{opacity:.5}
+.account-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.account-state{border-bottom:.5px solid #d7dcdf;padding:18px 0;display:flex;gap:16px;justify-content:space-between;align-items:center}
+.account-state b{font-size:14px}.account-state span{font-size:12px;color:#626b6f}
+.account-message{padding:14px 0;font-size:14px;color:#626b6f}.account-error{color:#a53632}
+.account-choices{display:grid;gap:10px;margin:20px 0}.account-choice{width:100%;background:#f6f7f7;color:#202425;text-align:left;border:0;border-radius:8px;padding:15px 17px;font-size:14px}
+.account-choice strong{display:block;margin-bottom:4px}.account-choice span{display:block;font-size:12px;color:#626b6f}
+.account-conflict{border-bottom:.5px solid #d7dcdf;padding:16px 0}.account-conflict button{margin:8px 8px 0 0}
+.account-note{font-size:12px;color:#626b6f;border-top:.5px solid #d7dcdf;padding:17px 0;margin-top:30px}
+[hidden]{display:none!important}
+</style></head>
+<body><div class="account-wrap">
+<header class="account-head"><a class="account-brand" href="../"><img src="../brand-mark.png" alt="m1racle 母标"><span>Study</span></a><a href="../">返回学习首页</a></header>
+<main><h1>账号与同步</h1><p style="margin-top:3px"><a href="../#/courses" style="color:#185db4">← 返回课程进度</a></p><p>电脑和手机使用同一个账号，可同步录播观看进度、题目记录、笔记和体格检查进度。</p>
+<p class="account-note">Anki 卡包和评分单独保存在此浏览器，不参与当前云同步，也不随账号切换。更换设备前请先导出 Anki 复习记录。</p>
+<div class="account-state"><div><b id="sync-label">正在检查</b><p id="sync-detail">检查云端连接状态</p></div><span id="pending-number"></span></div>
+<section id="config-required" hidden><h2>尚未连接云数据库</h2><p>代码已准备，但这个网站尚未配置独立的 Supabase 项目。为避免误用现有 Medlearn 数据库，云端地址和公开 API Key 目前留空。请按部署说明完成配置。</p></section>
+<section id="sign-in-section" hidden><h2>邮箱登录</h2><form id="login-form" class="account-form"><div class="account-field"><label for="email">邮箱</label><input id="email" name="email" type="email" autocomplete="username" placeholder="your@email.com" required></div><div class="account-field"><label for="password">密码</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="6" required></div><button class="account-action" type="submit" id="sign-in">登录</button></form><p style="margin-top:13px;font-size:12px">第一阶段仅允许管理员账户登录，不开放自助注册。首次账号由项目所有者在 Supabase 控制台创建。</p></section>
+<section id="migration-section" hidden><h2>处理此设备原有记录</h2><p>检测到本机旧版学习记录。必须先选择如何处理，云同步才会启动。两种选择都会先保存一份本机原始备份。</p><div class="account-choices"><button type="button" class="account-choice" id="merge-local"><strong>合并本机记录</strong><span>只补充云端没有的条目；同一条记录优先保留云端版本，本机原件会备份。</span></button><button type="button" class="account-choice" id="use-cloud"><strong>使用云端记录</strong><span>先备份本机记录，再用此账号的云端数据作为当前设备的学习进度。</span></button></div></section>
+<section id="signed-section" hidden><h2>已登录</h2><p id="current-account"></p><div class="account-actions"><button class="account-action" type="button" id="manual-sync">立即同步</button><button class="account-action secondary" type="button" id="export-backup">导出本机备份</button><button class="account-action secondary" type="button" id="sign-out">退出登录</button></div><p style="margin-top:13px;font-size:12px">未来微信登录会作为第二种身份绑定到同一个 user_id；当前尚未启用微信授权。</p></section>
+<section id="conflict-section" hidden><h2>需要手动处理的记录冲突</h2><p>两个设备对同一条记录做了不同修改。系统不会悄悄覆盖你的笔记或评分。</p><div id="conflict-list"></div></section>
+<div class="account-message" id="message" role="status" aria-live="polite"></div>
+<p class="account-note">初次同步需要网络连接。浏览器会保留待上传队列；退出时会检查未同步记录。私人题库不得放进公开网站目录。你的密码不会被写入本站代码或自行管理。</p>
+</main></div>
+<script src="../assets/cloud-config.js"></script><script src="../assets/cloud-sync.js"></script>
+<script>
+(()=>{'use strict';
+ const C=window.M1Cloud;
+ const $=s=>document.querySelector(s);
+ const set=(selector,show)=>{$(selector).hidden=!show};
+ const msg=(t,isError=false)=>{const e=$('#message');e.textContent=t;e.className='account-message'+(isError?' account-error':'')};
+ const enc=s=>String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+ function render(s){
+  $('#sync-label').textContent=C.statusText();
+  $('#sync-detail').textContent=s.error||((s.mode==='ready'||s.mode==='syncing')?'已经建立安全会话；联网时自动检查更新。':'数据仍保存在当前浏览器。');
+  $('#pending-number').textContent=s.pending?`待处理 ${s.pending} 条`:'';
+  set('#config-required',s.mode==='setup');
+  set('#sign-in-section',s.configured&&!s.userId);
+  set('#migration-section',s.mode==='migration');
+  set('#signed-section',!!s.userId);
+  $('#current-account').textContent=s.email||'';
+  const conflicts=C.listConflicts();set('#conflict-section',conflicts.length>0);
+  $('#conflict-list').innerHTML=conflicts.map(c=>`<div class="account-conflict"><strong>${enc(c.key)}</strong><div><button class="account-action secondary" data-resolve="remote" data-key="${enc(c.key)}">采用云端</button><button class="account-action secondary" data-resolve="local" data-key="${enc(c.key)}">保留本机</button></div></div>`).join('');
+  $('#merge-local').disabled=!!(s.userId&&localStorage.getItem('m1racle_cloud_owner_v1')&&localStorage.getItem('m1racle_cloud_owner_v1')!==s.userId);
+ }
+ C.subscribe(render);
+ $('#login-form').addEventListener('submit',async e=>{e.preventDefault();$('#sign-in').disabled=true;msg('正在验证账号…');try{await C.login($('#email').value,$('#password').value);$('#password').value='';msg('账号验证成功')}catch(err){msg(err.message,true)}finally{$('#sign-in').disabled=false}});
+ $('#merge-local').onclick=async()=>{msg('正在保存本机备份并合并…');try{await C.migrate('merge');msg('本机记录已提交合并，未完成的上传会继续重试。')}catch(e){msg(e.message,true)}};
+ $('#use-cloud').onclick=async()=>{msg('正在保存本机备份…');try{await C.migrate('cloud');msg('已开始使用云端记录，原记录保留在此设备备份中。')}catch(e){msg(e.message,true)}};
+ $('#manual-sync').onclick=async()=>{msg('正在同步…');await C.synchronize();msg(C.status().error||C.statusText(),!!C.status().error)};
+ $('#export-backup').onclick=()=>{C.exportBackup();msg('备份文件已生成')};
+ $('#sign-out').onclick=async()=>{try{await C.signout();msg('已退出登录；云端数据不会自动与其他账号合并。')}catch(e){msg(e.message,true)}};
+ $('#conflict-list').addEventListener('click',async e=>{const b=e.target.closest('[data-resolve]');if(!b)return;b.disabled=true;try{await C.resolveConflict(b.dataset.key,b.dataset.resolve);msg('已应用所选冲突处理方式')}catch(err){msg(err.message,true)}finally{b.disabled=false}});
+})();
+</script></body></html>
