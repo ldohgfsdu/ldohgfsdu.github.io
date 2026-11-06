@@ -54,7 +54,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 
 </style></head>
 <body><main>
-<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入与复习 · 浏览器实验版</p></div><span class="tag">实验版 v3.2 · 非 APK</span></header>
+<header><div><h1>M1racle Study <span style="color:#2563eb">· Anki</span></h1><p class="subtitle">卡包导入、遮挡与本地复习 · 实验版</p></div><span class="tag">实验版 v3.3 · 非 APK</span></header>
 <div class="notice">本页在浏览器本地读取 .apkg，卡片图片不上传服务器。复习记录保存在当前浏览器，<b>尚未接入 Supabase 云同步</b>；也未实现 AnkiWeb 双向同步。导入后请检查图片和遮挡是否正确。</div>
 <section class="panel">
 <h2>① 导入 Anki 卡包</h2>
@@ -64,7 +64,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 <details><summary class="note">查看导入日志</summary><pre id="log"></pre></details>
 </section>
 <section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
-<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="m1-nav" class="row hidden"><button id="m1-prev">上一张</button><span id="m1-pos" class="stat"></span><button id="m1-next">下一张</button></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details></section>
+<section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="m1-nav" class="row hidden"><button id="m1-prev">上一张</button><span id="m1-pos" class="stat"></span><button id="m1-next">下一张</button></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div><details style="margin-top:18px"><summary class="note">当前卡片结构诊断（显示字段类型，不上传卡片数据）</summary><pre id="card-debug" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65"></pre></details><div class="row" id="review-actions" style="margin-top:12px"><button id="undo" disabled>撤销上次评分</button><button id="suspend">暂停此卡</button></div></section>
 <section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、以 Question Mask / Answer Mask 保存的图片遮挡卡，以及 <b>Kevin Image Cloze（PDF Guru）</b> 这类把遮挡矩形存进 Masks 字段的图片挖空卡：正面按归一化坐标还原遮挡层，可点击任意红条逐个原位揭晓，也可点击「显示答案」揭晓所有剩余遮挡；不生成第二张图片，并已移除模板自带导航箭头。<b>Anki 原生 Image Occlusion 的复杂 SVG 遮挡仍不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
 </main>
 <script>
@@ -453,26 +453,73 @@ function sides(item){
   return {front:bestCardField(item,false),back:bestCardField(item,true),mode:'按实际字段识别'};
 }
 function revKey(cid){return 'm1racle_anki_review_'+packKey+'_'+cid;}
+function suspendKey(cid){return 'm1racle_anki_suspend_'+packKey+'_'+cid;}
+function undoKey(){return 'm1racle_anki_undo_'+packKey;}
 function loadReview(cid){try{return JSON.parse(localStorage.getItem(revKey(cid))||'null')}catch{return null}}
-function due(item){let r=loadReview(item.cid);return !r||!r.due||new Date(r.due).getTime()<=Date.now()}
+function isSuspended(item){return localStorage.getItem(suspendKey(item.cid))==='1'}
+function getReviewState(item){
+ const r=loadReview(item.cid);
+ if(!r)return 'new';
+ const state=Number(r.card?.state??0);
+ return state===2?'review':(state===1||state===3)?'learning':'new';
+}
+function due(item){
+ if(isSuspended(item))return false;
+ const r=loadReview(item.cid);
+ if(!r)return true;
+ const t=new Date(r.card?.due||r.due).getTime();
+ if(!Number.isFinite(t))return true;
+ // Review cards are due on their local calendar day; learning steps are minute-accurate.
+ if(getReviewState(item)==='review'){
+   const end=new Date();end.setHours(23,59,59,999);
+   return t<=end.getTime();
+ }
+ return t<=Date.now();
+}
+function deckMatches(item,did){
+ if(did==='all'||String(item.did)===did)return true;
+ const selected=decks[did]||'',candidate=decks[String(item.did)]||'';
+ return !!selected&&candidate.startsWith(selected+'::');
+}
+function sortQueue(a,b){
+ const rank=x=>getReviewState(x)==='learning'?0:getReviewState(x)==='review'?1:2;
+ const diff=rank(a)-rank(b);if(diff)return diff;
+ const ad=Date.parse(loadReview(a.cid)?.card?.due||'')||0;
+ const bd=Date.parse(loadReview(b.cid)?.card?.due||'')||0;
+ return ad-bd||Number(a.cid)-Number(b.cid);
+}
 function scopeRows(){
-  const did=$('deck').value;
-  const subset=rows.filter(r=>(did==='all'||String(r.did)===did)&&($('scope').value==='all'||due(r)));
-  return subset;
+ const did=$('deck').value;
+ return rows.filter(r=>deckMatches(r,did)&&($('scope').value==='all'||due(r))).sort(sortQueue);
+}
+function updateActions(){
+ $('undo').disabled=!packKey||!localStorage.getItem(undoKey());
+ if(active){
+  const suspended=isSuspended(active);
+  $('suspend').textContent=suspended?'恢复此卡':'暂停此卡';
+  $('suspend').disabled=false;
+ }else{$('suspend').disabled=true;}
 }
 function updateStats(){
-  if(!rows.length)return;
-  let did=$('deck').value,filtered=rows.filter(r=>did==='all'||String(r.did)===did);
-  const reviewed=filtered.filter(r=>!!loadReview(r.cid)).length;
-  $('counts').textContent='本牌组 '+filtered.length+' 张卡片 · 已有本地复习记录 '+reviewed+' 张 · 当前可复习 '+scopeRows().length+' 张';
-  $('bar').style.width=(filtered.length?Math.round(reviewed/filtered.length*100):0)+'%';
+ if(!rows.length)return;
+ const did=$('deck').value,filtered=rows.filter(r=>deckMatches(r,did));
+ let counts={new:0,learning:0,review:0,suspended:0};
+ for(const card of filtered){
+   if(isSuspended(card))counts.suspended++;
+   else counts[getReviewState(card)]++;
+ }
+ const dueCount=filtered.filter(due).length;
+ const reviewed=filtered.filter(r=>!!loadReview(r.cid)).length;
+ $('counts').textContent='新卡 '+counts.new+' · 学习中 '+counts.learning+' · 复习中 '+counts.review+' · 暂停 '+counts.suspended+' · 今天待学 '+dueCount+' · 已评分 '+reviewed;
+ $('bar').style.width=(filtered.length?Math.round(reviewed/filtered.length*100):0)+'%';
+ updateActions();
 }
 async function showCurrent(){
-  updateStats();session=scopeRows();if(index>=session.length)index=0;
+  session=scopeRows();if(index>=session.length)index=0;updateStats();
   const item=session[index];
   $('review').classList.toggle('hidden',!item);
-  if(!item){if(rows.length)notice('本次筛选范围没有待复习卡片，可切换为“全部卡片”。');return;}
-  active=item;visible=false;revealInPlace=false;
+  if(!item){active=null;updateActions();if(rows.length)notice('当前筛选范围没有待复习卡片，可切换为“全部卡片”或解除暂停。');return;}
+  active=item;visible=false;revealInPlace=false;updateActions();
   $('reveal-area').classList.remove('hidden');$('grade').classList.add('hidden');$('back').classList.add('hidden');
   const s=sides(item);
   revealInPlace=!!s.revealInPlace;
@@ -500,17 +547,53 @@ async function showCurrent(){
     await renderHTML($('back'),s.back);
   }
 }
+let grading=false;
 async function grade(value){
-  if(!active||!visible)return;
-  try{
-    if(!fsrsModule){await loadLibrary('./vendor/fsrs.js');fsrsModule=window.M1racleFSRS;if(!fsrsModule)throw new Error('FSRS 复习模块未加载');scheduler=fsrsModule.fsrs();}
-    let r=loadReview(active.cid),c=r?.card||fsrsModule.createEmptyCard();
-    if(c.due)c.due=new Date(c.due);if(c.last_review)c.last_review=new Date(c.last_review);
-    const result=scheduler.next(c,new Date(),value);
-    localStorage.setItem(revKey(active.cid),JSON.stringify({card:result.card,due:result.card.due,reviewedAt:new Date().toISOString(),grade:value}));
-    notice('复习已保存在本机。下次到期：'+new Date(result.card.due).toLocaleString('zh-CN'));
-    session=scopeRows();if(index>=session.length)index=0;await showCurrent();
-  }catch(e){notice('FSRS复习记录未保存：'+(e.message||e));}
+ if(!active||!visible||grading||isSuspended(active))return;
+ grading=true;
+ const gradedId=active.cid;
+ try{
+  if(!fsrsModule){await loadLibrary('./vendor/fsrs.js');fsrsModule=window.M1racleFSRS;if(!fsrsModule)throw new Error('FSRS 复习模块未加载');scheduler=fsrsModule.fsrs();}
+  const key=revKey(gradedId);
+  const prior=localStorage.getItem(key);
+  let r=loadReview(gradedId),c=r?.card||fsrsModule.createEmptyCard();
+  if(c.due)c.due=new Date(c.due);
+  if(c.last_review)c.last_review=new Date(c.last_review);
+  const now=new Date(),result=scheduler.next(c,now,value);
+  const history=(r?.history||[]).slice(-199);
+  history.push({at:now.toISOString(),rating:value,due:result.card.due,state:result.card.state});
+  const after=JSON.stringify({card:result.card,due:result.card.due,reviewedAt:now.toISOString(),grade:value,history});
+  // A one-step undo snapshot is saved before any queue transition.
+  localStorage.setItem(undoKey(),JSON.stringify({cid:gradedId,prior,after,at:now.toISOString()}));
+  localStorage.setItem(key,after);
+  notice('已记录评分；下次到期：'+new Date(result.card.due).toLocaleString('zh-CN')+'（可撤销）');
+  session=scopeRows();if(index>=session.length)index=0;
+  await showCurrent();
+ }catch(e){notice('FSRS复习记录未保存：'+(e.message||e));}
+ finally{grading=false;}
+}
+function undoLastGrade(){
+ if(!packKey)return;
+ let info=null;try{info=JSON.parse(localStorage.getItem(undoKey())||'null')}catch{}
+ if(!info)return notice('没有可撤销的评分记录');
+ // Refuse to overwrite changes made since last action.
+ const target=revKey(info.cid);
+ if(localStorage.getItem(target)!==info.after)return notice('该卡评分记录已改变，无法安全撤销');
+ if(info.prior===null)localStorage.removeItem(target);
+ else localStorage.setItem(target,info.prior);
+ localStorage.removeItem(undoKey());
+ const next=scopeRows(),position=next.findIndex(r=>String(r.cid)===String(info.cid));
+ index=Math.max(0,position);
+ notice('上次评分已撤销，卡片复习状态已恢复');
+ showCurrent().catch(e=>notice('撤销后刷新失败：'+e.message));
+}
+function toggleSuspend(){
+ if(!active)return;
+ const key=suspendKey(active.cid);
+ if(isSuspended(active)){localStorage.removeItem(key);notice('此卡已恢复到学习队列');}
+ else{localStorage.setItem(key,'1');notice('此卡已暂停，不再计入今日到期队列');}
+ const next=scopeRows();if(index>=next.length)index=0;
+ showCurrent().catch(e=>notice('更新队列失败：'+e.message));
 }
 function openDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error('浏览器不支持 IndexedDB'));const req=indexedDB.open('m1racle-anki-local',1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('packages'))req.result.createObjectStore('packages')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function storeFile(file){const db=await openDB();await new Promise((resolve,reject)=>{let tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(file,'last');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}
@@ -536,7 +619,7 @@ async function importFile(file,save){
  db.close();
  let mediaType='无';
  if(zip.file('media')){try{mediaType=decodeMedia(await zip.file('media').async('uint8array'))}catch(e){log('媒体索引失败：'+e.message);mediaType='未能识别';}}
- packKey=file.name+'_'+file.size;
+ packKey=file.name+'_'+file.size;active=null;
  $('stats').classList.remove('hidden');const options=[['all','所有牌组']];
  for(const did of [...new Set(rows.map(x=>String(x.did)))])options.push([did,decks[did]||('牌组 '+did)]);
  $('deck').innerHTML='';
@@ -616,6 +699,8 @@ $('reveal').addEventListener('click',()=>{
 $('m1-prev').addEventListener('click',()=>{if(!session.length)return;index=(index-1+session.length)%session.length;showCurrent()});
 $('m1-next').addEventListener('click',()=>{if(!session.length)return;index=(index+1)%session.length;showCurrent()});
 $('grade').addEventListener('click',e=>{let b=e.target.closest('[data-grade]');if(b)grade(Number(b.dataset.grade))});
+$('undo').addEventListener('click',undoLastGrade);
+$('suspend').addEventListener('click',toggleSuspend);
 $('reset').addEventListener('click',()=>{if(!packKey)return notice('请先导入卡包');if(!confirm('确定清除当前卡包的本地复习评分记录吗？'))return;for(let x of rows)localStorage.removeItem(revKey(x.cid));index=0;notice('已清除当前卡包的本地复习记录');showCurrent()});
 window.addEventListener('error',e=>log('浏览器错误：'+e.message));
 })();
