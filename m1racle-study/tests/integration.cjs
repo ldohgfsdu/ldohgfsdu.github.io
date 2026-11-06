@@ -10,7 +10,11 @@ const CAT='ttsx-2027-basic-strengthening';
 const groups=[{catalog_key:CAT,group_no:2,group_title:'生理核心—真题—串联',subject:'生理学',lesson_type:'core_review',listed_video_count:48,capture_status:'complete'}];
 const lesson={id:CAT+'-g02-l004',group_no:2,lesson_no:4,study_order:1,display_title:'绪论1',verification_status:'verified_from_screenshot',duration_seconds:null};
 async function clickNav(page,view){await page.locator((await page.locator('.sidebar').isVisible()?'.side-nav':'.mobile-nav')+' [data-view="'+view+'"]').click();}
-async function noOverflow(page){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'horizontal overflow');}
+async function noOverflow(page){
+ const bounds=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,
+  outside:[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(e=>({tag:e.tagName,class:e.className,right:e.getBoundingClientRect().right}))}));
+ assert.ok(bounds.scroll<=bounds.width+1,'horizontal overflow: '+JSON.stringify(bounds));
+}
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
@@ -50,7 +54,12 @@ async function noOverflow(page){assert.equal(await page.evaluate(()=>document.do
    await page.reload();frame=page.frameLocator('.anki-frame');await frame.locator('#restore').click();
    await frame.locator('#front .m1-ic-mask').first().waitFor();assert.match(await frame.locator('#counts').innerText(),/已评分 1/);
    await page.screenshot({path:screenshots+'/anki-'+width+'.png'});
-   await page.goto(new URL('physical/',base).href);await page.locator('#main').waitFor();assert.match(await page.locator('body').innerText(),/体格/);await noOverflow(page);
+   const physicalNavigations=[];const recordNavigation=frame=>{if(frame===page.mainFrame())physicalNavigations.push(frame.url())};page.on('framenavigated',recordNavigation);
+   await page.goto(new URL('physical/',base).href);await page.locator('#main').waitFor();
+   await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/physical/service-worker.js'));
+   assert.match(await page.locator('body').innerText(),/体格/);await noOverflow(page);
+   assert.equal(physicalNavigations.length,1,'first worker takeover must not force a page reload');page.off('framenavigated',recordNavigation);
+   await page.screenshot({path:screenshots+'/physical-'+width+'.png'});
    await page.goto(new URL('account/',base).href);await page.locator('#sign-in-section').waitFor();assert.equal(await page.locator('#email').isVisible(),true);await noOverflow(page);
    assert.equal(errors.length,0,'page errors: '+errors.join('; '));
    console.log('PASS '+width+'px: home, quiz, map, courses auth state, embedded Anki, retained card, score, backup import/export, reload, physical, account, no overflow');

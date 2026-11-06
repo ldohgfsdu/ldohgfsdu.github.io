@@ -478,13 +478,15 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
       const reg=await navigator.serviceWorker.register('service-worker.js');
       const banner=document.getElementById('update-banner');
       const apply=document.getElementById('apply-update');
-      const showUpdate=worker=>{if(!worker)return;banner.classList.add('show');apply.onclick=()=>worker.postMessage({type:'SKIP_WAITING'})};
+      let applyingUpdate=false;
+      const showUpdate=worker=>{if(!worker)return;banner.classList.add('show');apply.onclick=()=>{applyingUpdate=true;worker.postMessage({type:'SKIP_WAITING'})}};
       if(reg.waiting)showUpdate(reg.waiting);
       reg.addEventListener('updatefound',()=>{
         const nw=reg.installing;if(!nw)return;
         nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)showUpdate(nw)})
       });
-      navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+      // Initial scope takeover must preserve the current exercise and text input.
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{if(applyingUpdate)window.location.reload()});
     }catch(e){}
   });
 }
