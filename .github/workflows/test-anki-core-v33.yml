@@ -1,9 +1,12 @@
-name: M1racle Anki Kevin Cloze and review regression
+name: M1racle Anki v3.4 core and Kevin regression
 on:
   push:
     paths:
-      - m1racle-anki-lab/index.html
-      - m1racle-anki-lab/tests/**
+      - m1racle-anki-lab/**
+      - .github/workflows/test-anki-core-v33.yml
+  pull_request:
+    paths:
+      - m1racle-anki-lab/**
       - .github/workflows/test-anki-core-v33.yml
   workflow_dispatch:
 
@@ -19,6 +22,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Test independent queue and SHA-256 fallback
+        run: |
+          TZ=Asia/Shanghai node --test m1racle-anki-lab/tests/review-core.test.cjs
+          TZ=America/New_York node --test m1racle-anki-lab/tests/review-core.test.cjs
       - name: Install browser test runner
         run: |
           npm install --no-save --ignore-scripts playwright@1.56.1
@@ -27,11 +34,11 @@ jobs:
         run: python3 m1racle-anki-lab/tests/generate_fixture.py
       - name: Serve actual static website files
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/anki-v33-server.log 2>&1 &
-      - name: Run mobile-sized end-to-end regressions
+      - name: Run mobile and desktop end-to-end regressions
         run: node m1racle-anki-lab/tests/smoke.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: m1racle-anki-v33-regression-screenshots
-          path: /tmp/anki-v33-*.png
+          name: m1racle-anki-v34-regression-screenshots
+          path: /tmp/anki-v34-*.png
           if-no-files-found: ignore
