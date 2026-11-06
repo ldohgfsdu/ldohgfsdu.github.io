@@ -13,7 +13,7 @@ input[type=file]{width:100%;padding:12px;border:1px dashed var(--line);border-ra
 .notice{padding:11px 13px;border-radius:10px;background:#2563eb12;border:1px solid #2563eb33;font-size:13px;line-height:1.65}
 #log{white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:12px/1.6 ui-monospace,monospace;color:var(--muted)}
 #front,#back{min-height:100px;line-height:1.65;font-size:17px;overflow-wrap:anywhere}#front img,#back img{display:block;max-width:100%;height:auto;object-fit:contain;margin:8px auto}#front svg,#back svg{max-width:100%;height:auto}
-#front img,#back img{cursor:zoom-in}.anki-occlusion{position:relative;max-width:100%}.anki-mask{position:absolute;inset:0;pointer-events:none}.anki-mask svg{width:100%;height:100%}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
+#front img,#back img{cursor:zoom-in}.anki-occlusion{position:relative;max-width:100%}.anki-mask{position:absolute;inset:0;pointer-events:none}.anki-mask svg{width:100%;height:100%}.anki-mask img{display:block;width:100%;height:auto;max-width:100%}.anki-occlusion>img{display:block;width:100%;height:auto;max-width:100%}.answer{border-top:1px dashed var(--line);padding-top:20px;margin-top:18px}
 .cardshell{min-height:240px}.hidden{display:none!important}.ratings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ratings button{padding:13px 5px}.rating-again{color:#e85b61}.rating-easy{color:#248f65}.tag{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--bg);color:var(--muted)}
 summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--line);overflow:hidden}.progress>div{height:100%;background:#2563eb;transition:width .2s}
 @media(max-width:550px){main{padding:16px 12px 50px}.panel{padding:14px}.ratings{gap:5px}.ratings button{font-size:12px}h1{font-size:20px}}
@@ -30,7 +30,7 @@ summary{cursor:pointer}.progress{height:6px;border-radius:10px;background:var(--
 </section>
 <section id="stats" class="panel hidden"><h2>② 卡包结构</h2><div id="meta" class="stat"></div><div class="row" style="margin:14px 0"><label style="flex:1 1 260px">选择牌组<select id="deck"></select></label><label style="flex:1 1 180px">复习范围<select id="scope"><option value="due">仅今天到期（含新卡）</option><option value="all">全部卡片</option></select></label></div><div id="counts" class="stat"></div><div class="progress" style="margin-top:10px"><div id="bar" style="width:0%"></div></div></section>
 <section id="review" class="panel hidden"><h2>③ 卡片复习</h2><div id="head" class="row" style="justify-content:space-between;margin-bottom:12px"></div><div class="cardshell"><div id="front"></div><div id="back" class="answer hidden"></div></div><div id="reveal-area" style="margin-top:18px"><button id="reveal" class="primary" style="width:100%">显示答案</button></div><div id="grade" class="ratings hidden" style="margin-top:20px"><button data-grade="1" class="rating-again">重来</button><button data-grade="2">困难</button><button data-grade="3">良好</button><button data-grade="4" class="rating-easy">简单</button></div></section>
-<section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、部分以 Question Mask / Answer Mask 保存的图片遮挡卡。<b>原生 Anki Image Occlusion 的复杂 SVG 遮挡及第三方自定义 JS 模板不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
+<section class="panel"><details><summary>目前兼容范围和限制</summary><p class="note">可读取传统 collection.anki2、collection.anki21 和新版 zstd collection.anki21b；新版卡片模板可从 Protobuf 读取。读取旧版 JSON 或新版 Protobuf 媒体索引。支持基础正反面、文本 Cloze、部分以 Question Mask / Answer Mask 保存的图片遮挡卡。<b>原生 Anki Image Occlusion 的复杂 SVG 遮挡及第三方自定义 JS 模板不能保证保真</b>，检测到时会给出提示。FSRS 使用固定版本 ts-fsrs；如果加载失败，复习评分不会伪称已保存。当前属于独立实验页，不是原 Netlify 网站的正式上线版本。</p></details></section>
 </main>
 <script>
 (function(){
@@ -96,7 +96,24 @@ function asModelMap(db){
   if(!Object.keys(out).length){
     try{for(const r of query(db,'SELECT id,name FROM notetypes'))out[String(r.id)]={name:r.name,flds:[],tmpls:[]}}catch{}
     try{for(const r of query(db,'SELECT ntid,name,ord FROM fields ORDER BY ntid,ord')){let m=out[String(r.ntid)];if(m)m.flds[Number(r.ord)]={name:r.name}}}catch{}
-    try{for(const r of query(db,'SELECT ntid,ord,name,qfmt,afmt FROM templates ORDER BY ntid,ord')){let m=out[String(r.ntid)];if(m)m.tmpls[Number(r.ord)]={name:r.name,qfmt:r.qfmt,afmt:r.afmt}}}catch(e){log('模板表解析未完成：'+e.message)}
+    try {
+      const cols=query(db,'PRAGMA table_info(templates)').map(r=>r.name);
+      const legacy=cols.includes('qfmt')&&cols.includes('afmt');
+      const sql=legacy
+        ?'SELECT ntid,ord,name,qfmt,afmt FROM templates ORDER BY ntid,ord'
+        :'SELECT ntid,ord,name,config FROM templates ORDER BY ntid,ord';
+      for(const r of query(db,sql)){
+        const m=out[String(r.ntid)];if(!m)continue;
+        let qfmt=r.qfmt||'',afmt=r.afmt||'';
+        if(!legacy&&r.config&&r.config.length){
+          const data=r.config instanceof Uint8Array?r.config:new Uint8Array(r.config);
+          const fields=pbFields(data,0,data.length);
+          const decode=n=>{const x=fields.find(f=>f[0]===n&&f[1]===2);return x?new TextDecoder().decode(x[2]):''};
+          qfmt=decode(1);afmt=decode(2);
+        }
+        m.tmpls[Number(r.ord)]={name:r.name,qfmt,afmt};
+      }
+    }catch(e){log('模板表解析未完成：'+e.message)}
   }
   for(const m of Object.values(out)){m.flds=Array.isArray(m.flds)?m.flds:[];m.tmpls=Array.isArray(m.tmpls)?m.tmpls:[];}
   return out;
