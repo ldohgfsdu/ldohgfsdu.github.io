@@ -1,10 +1,6 @@
 name: Anki image occlusion browser regression
 
 on:
-  push:
-    paths:
-      - .github/workflows/test-anki-occlusion.yml
-      - m1racle-anki-lab/index.html
   workflow_dispatch:
 
 permissions:

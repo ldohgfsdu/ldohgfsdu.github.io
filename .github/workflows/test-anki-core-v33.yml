@@ -1,13 +1,5 @@
 name: M1racle Anki v3.4 core and Kevin regression
 on:
-  push:
-    paths:
-      - m1racle-anki-lab/**
-      - .github/workflows/test-anki-core-v33.yml
-  pull_request:
-    paths:
-      - m1racle-anki-lab/**
-      - .github/workflows/test-anki-core-v33.yml
   workflow_dispatch:
 
 permissions:

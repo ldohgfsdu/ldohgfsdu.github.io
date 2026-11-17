@@ -1,13 +1,5 @@
 name: M1racle Study integrated website regression
 on:
-  push:
-    paths:
-      - m1racle-study/**
-      - .github/workflows/test-study-integration.yml
-  pull_request:
-    paths:
-      - m1racle-study/**
-      - .github/workflows/test-study-integration.yml
   workflow_dispatch:
 permissions:
   contents: read

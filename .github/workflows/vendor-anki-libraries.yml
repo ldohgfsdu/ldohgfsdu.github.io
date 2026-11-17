@@ -1,9 +1,6 @@
 name: Vendor Anki browser libraries
 
 on:
-  push:
-    paths:
-      - .github/workflows/vendor-anki-libraries.yml
   workflow_dispatch:
 
 permissions:
